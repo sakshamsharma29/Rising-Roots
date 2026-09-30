@@ -1,0 +1,12 @@
+{
+  "name": "rising-roots-root",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Rising Roots Fullstack Application",
+  "scripts": {
+    "dev:frontend": "npm run dev --prefix frontend",
+    "dev:backend": "npm run dev --prefix backend",
+    "build:frontend": "npm run build --prefix frontend",
+    "start:backend": "npm run start --prefix backend"
+  }
+}
