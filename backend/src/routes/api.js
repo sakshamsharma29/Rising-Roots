@@ -6,6 +6,7 @@ import {
   deleteMember,
   toggleMemberStatus,
   getStats,
+  getActivities,
   broadcastAnnouncement,
 } from '../controllers/membersController.js';
 import { getPlans } from '../controllers/plansController.js';
@@ -24,6 +25,7 @@ router.patch('/members/:id/toggle', toggleMemberStatus);
 // Broadcast & Stats
 router.post('/broadcast', broadcastAnnouncement);
 router.get('/stats', getStats);
+router.get('/activities', getActivities);
 
 // Plans & Analytics endpoints
 router.get('/plans', getPlans);

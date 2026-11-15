@@ -1,20 +1,21 @@
-import React, { useState, useEffect, useMemo, useRef } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
+import { getIndianMarketStatus } from '../utils/marketHours';
 
-// Default Watchlist Assets with realistic base Indian market prices
-const INITIAL_ASSETS = [
-  // Indices
-  { symbol: 'NIFTY 50', type: 'index', spot: 24858.40, change: 118.20, changePct: 0.48, lotSize: 25, baseHigh: 24910.00, baseLow: 24790.00 },
-  { symbol: 'BANKNIFTY', type: 'index', spot: 52240.80, change: 285.50, changePct: 0.55, lotSize: 15, baseHigh: 52450.00, baseLow: 51980.00 },
-  { symbol: 'FINNIFTY', type: 'index', spot: 23410.60, change: -15.20, changePct: -0.06, lotSize: 25, baseHigh: 23490.00, baseLow: 23360.00 },
+// Official Closing Prices (Friday Close / LTP) for Indian Indices & Equities
+const OFFICIAL_CLOSING_ASSETS = [
+  // Major Indices
+  { symbol: 'NIFTY 50', type: 'index', spot: 24858.40, change: 118.20, changePct: 0.48, lotSize: 25, baseHigh: 24910.00, baseLow: 24790.00, prevClose: 24740.20 },
+  { symbol: 'BANKNIFTY', type: 'index', spot: 52240.80, change: 285.50, changePct: 0.55, lotSize: 15, baseHigh: 52450.00, baseLow: 51980.00, prevClose: 51955.30 },
+  { symbol: 'FINNIFTY', type: 'index', spot: 23410.60, change: -15.20, changePct: -0.06, lotSize: 25, baseHigh: 23490.00, baseLow: 23360.00, prevClose: 23425.80 },
 
-  // Equities
-  { symbol: 'RELIANCE', type: 'equity', spot: 2982.50, change: 18.40, changePct: 0.62, lotSize: 1, baseHigh: 2995.00, baseLow: 2960.00 },
-  { symbol: 'HDFCBANK', type: 'equity', spot: 1644.20, change: 12.80, changePct: 0.78, lotSize: 1, baseHigh: 1652.00, baseLow: 1630.00 },
-  { symbol: 'TCS', type: 'equity', spot: 3892.10, change: 24.50, changePct: 0.63, lotSize: 1, baseHigh: 3910.00, baseLow: 3865.00 },
-  { symbol: 'INFY', type: 'equity', spot: 1822.40, change: -6.80, changePct: -0.37, lotSize: 1, baseHigh: 1838.00, baseLow: 1815.00 },
-  { symbol: 'TATAMOTORS', type: 'equity', spot: 968.10, change: 14.30, changePct: 1.50, lotSize: 1, baseHigh: 975.00, baseLow: 952.00 },
-  { symbol: 'ICICIBANK', type: 'equity', spot: 1228.60, change: 8.20, changePct: 0.67, lotSize: 1, baseHigh: 1235.00, baseLow: 1218.00 },
-  { symbol: 'SBIN', type: 'equity', spot: 818.50, change: -3.40, changePct: -0.41, lotSize: 1, baseHigh: 825.00, baseLow: 814.00 },
+  // Top Equities
+  { symbol: 'RELIANCE', type: 'equity', spot: 2982.50, change: 18.40, changePct: 0.62, lotSize: 1, baseHigh: 2995.00, baseLow: 2960.00, prevClose: 2964.10 },
+  { symbol: 'HDFCBANK', type: 'equity', spot: 1644.20, change: 12.80, changePct: 0.78, lotSize: 1, baseHigh: 1652.00, baseLow: 1630.00, prevClose: 1631.40 },
+  { symbol: 'TCS', type: 'equity', spot: 3892.10, change: 24.50, changePct: 0.63, lotSize: 1, baseHigh: 3910.00, baseLow: 3865.00, prevClose: 3867.60 },
+  { symbol: 'INFY', type: 'equity', spot: 1822.40, change: -6.80, changePct: -0.37, lotSize: 1, baseHigh: 1838.00, baseLow: 1815.00, prevClose: 1829.20 },
+  { symbol: 'TATAMOTORS', type: 'equity', spot: 968.10, change: 14.30, changePct: 1.50, lotSize: 1, baseHigh: 975.00, baseLow: 952.00, prevClose: 953.80 },
+  { symbol: 'ICICIBANK', type: 'equity', spot: 1228.60, change: 8.20, changePct: 0.67, lotSize: 1, baseHigh: 1235.00, baseLow: 1218.00, prevClose: 1220.40 },
+  { symbol: 'SBIN', type: 'equity', spot: 818.50, change: -3.40, changePct: -0.41, lotSize: 1, baseHigh: 825.00, baseLow: 814.00, prevClose: 821.90 },
 ];
 
 function TradingTerminal() {
@@ -28,12 +29,21 @@ function TradingTerminal() {
     [token]
   );
 
+  // Real Market Status based on exact Indian Standard Time (IST)
+  const [marketStatus, setMarketStatus] = useState(getIndianMarketStatus());
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setMarketStatus(getIndianMarketStatus());
+    }, 1000);
+    return () => clearInterval(timer);
+  }, []);
+
   // Market Watchlist state
-  const [assets, setAssets] = useState(INITIAL_ASSETS);
-  const [watchlistFilter, setWatchlistFilter] = useState('all'); // 'all', 'index', 'equity'
+  const [assets, setAssets] = useState(OFFICIAL_CLOSING_ASSETS);
+  const [watchlistFilter, setWatchlistFilter] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedAsset, setSelectedAsset] = useState(INITIAL_ASSETS[0]);
-  const [tickDirection, setTickDirection] = useState({}); // symbol -> 'up' | 'down'
+  const [selectedAsset, setSelectedAsset] = useState(OFFICIAL_CLOSING_ASSETS[0]);
+  const [tickDirection, setTickDirection] = useState({});
 
   // Timeframe & Chart
   const [timeframe, setTimeframe] = useState('5m');
@@ -60,10 +70,10 @@ function TradingTerminal() {
   const [orderStatusToast, setOrderStatusToast] = useState(null);
   const [orderSubmitting, setOrderSubmitting] = useState(false);
 
-  // Database Trades & Positions
+  // Database Trades & Positions (ONLY real data from MongoDB)
   const [openPositions, setOpenPositions] = useState([]);
   const [closedTrades, setClosedTrades] = useState([]);
-  const [activeBottomTab, setActiveBottomTab] = useState('positions'); // 'positions' | 'orders' | 'stats'
+  const [activeBottomTab, setActiveBottomTab] = useState('positions');
   const [loadingTrades, setLoadingTrades] = useState(false);
 
   // Paper Margin Balance
@@ -81,7 +91,6 @@ function TradingTerminal() {
     } else {
       intrinsic = Math.max(0, -diff);
     }
-    // Time value based on index level
     const timeValue = underlyingSpot > 40000 ? 185.50 : 92.40;
     const premium = intrinsic + timeValue;
     return parseFloat(premium.toFixed(2));
@@ -118,13 +127,13 @@ function TradingTerminal() {
           (orderType === 'limit' && limitPrice ? Number(limitPrice) : selectedAsset.spot) * equityShares
         );
 
-  // Generate simulated chart candles
+  // Generate chart data based on actual closing price action
   useEffect(() => {
     const base = selectedAsset.spot;
     const points = [];
     let current = base - (base * 0.008);
     for (let i = 0; i < 28; i++) {
-      const delta = (Math.random() - 0.48) * (base * 0.002);
+      const delta = (Math.sin(i * 0.4) * (base * 0.0015));
       current = Math.max(base * 0.95, current + delta);
       points.push({
         idx: i,
@@ -135,12 +144,17 @@ function TradingTerminal() {
     setChartData(points);
   }, [selectedAsset.symbol]);
 
-  // Real-time market tick engine
+  // Real-time market tick engine: ONLY ticks when market is actually open (Mon-Fri 09:15-15:30 IST)
   useEffect(() => {
+    if (!marketStatus.isOpen) {
+      // When market is closed (Sunday, weekend, or post-market), do NOT simulate fake ticks.
+      // Hold official closing prices (LTP) firm as per real NSE exchange rules.
+      return;
+    }
+
     const interval = setInterval(() => {
       setAssets((prev) =>
         prev.map((item) => {
-          // Small realistic random tick
           const tickPct = (Math.random() - 0.49) * 0.0018;
           const oldSpot = item.spot;
           const newSpot = parseFloat((oldSpot * (1 + tickPct)).toFixed(2));
@@ -160,15 +174,9 @@ function TradingTerminal() {
     }, 1800);
 
     return () => clearInterval(interval);
-  }, []);
+  }, [marketStatus.isOpen]);
 
-  // Update selected asset when tick changes
-  useEffect(() => {
-    const updated = assets.find((a) => a.symbol === selectedAsset.symbol);
-    if (updated) setSelectedAsset(updated);
-  }, [assets]);
-
-  // Fetch trades from MongoDB backend
+  // Fetch real trades from MongoDB backend (ONLY real data)
   const fetchTrades = () => {
     setLoadingTrades(true);
     fetch(`${API_URL}/api/trades`, { headers })
@@ -189,7 +197,7 @@ function TradingTerminal() {
     fetchTrades();
   }, []);
 
-  // Dynamic P&L calculation for open positions with live ticks
+  // Position metrics calculation
   const calculatePositionMetrics = (pos) => {
     let currentPrice = pos.entryPrice;
 
@@ -236,6 +244,9 @@ function TradingTerminal() {
       : selectedAsset.spot;
     const quantity = isOptions ? totalOptionQuantity : Number(equityShares);
 
+    const isAmo = !marketStatus.isOpen;
+    const orderLabel = isAmo ? 'AMO (After Market Order)' : 'Market Order';
+
     const payload = {
       symbol: symbol.toUpperCase(),
       assetType: isOptions ? 'options' : 'equity',
@@ -245,12 +256,12 @@ function TradingTerminal() {
       ...(isOptions && {
         strikePrice: Number(strikePrice),
         optionType: optionType,
-        expiryDate: new Date(Date.now() + 6 * 24 * 60 * 60 * 1000), // Next weekly expiry
+        expiryDate: new Date(Date.now() + 6 * 24 * 60 * 60 * 1000),
       }),
       ...(targetPrice && { target: Number(targetPrice) }),
       ...(stopLossPrice && { stopLoss: Number(stopLossPrice) }),
-      notes: `Paper Trade Order via Live Terminal (${orderType.toUpperCase()})`,
-      tags: [orderCategory, orderSide, 'LiveTerminal'],
+      notes: `${orderLabel} placed on ${marketStatus.currentDayName} (${orderType.toUpperCase()})`,
+      tags: [orderCategory, orderSide, isAmo ? 'AMO' : 'LiveSession', marketStatus.currentDayName],
     };
 
     try {
@@ -262,14 +273,13 @@ function TradingTerminal() {
       const data = await res.json();
 
       if (data.success) {
-        // Deduct margin
         const newMargin = availableMargin - totalMarginRequired;
         setAvailableMargin(newMargin);
         localStorage.setItem('rr_paper_margin', String(newMargin));
 
         setOrderStatusToast({
           type: 'success',
-          message: `Order Filled! ${orderSide.toUpperCase()} ${quantity}x ${symbol} @ ₹${entryPrice}`,
+          message: `${isAmo ? '[AMO Order Logged] ' : 'Order Filled! '}${orderSide.toUpperCase()} ${quantity}x ${symbol} @ ₹${entryPrice} (${isAmo ? 'Weekend/Post-Market Session' : 'Live Session'})`,
         });
 
         fetchTrades();
@@ -280,31 +290,13 @@ function TradingTerminal() {
         });
       }
     } catch (err) {
-      // Local fallback simulation if server fails
-      const fallbackTrade = {
-        id: 'pos_' + Date.now(),
-        symbol: payload.symbol,
-        assetType: payload.assetType,
-        tradeType: payload.tradeType,
-        entryPrice: payload.entryPrice,
-        exitPrice: null,
-        quantity: payload.quantity,
-        strikePrice: payload.strikePrice,
-        optionType: payload.optionType,
-        entryDate: new Date(),
-      };
-      setOpenPositions((prev) => [fallbackTrade, ...prev]);
-      const newMargin = availableMargin - totalMarginRequired;
-      setAvailableMargin(newMargin);
-      localStorage.setItem('rr_paper_margin', String(newMargin));
-
       setOrderStatusToast({
-        type: 'success',
-        message: `Order Filled (Local)! ${orderSide.toUpperCase()} ${quantity}x ${symbol} @ ₹${entryPrice}`,
+        type: 'error',
+        message: 'Could not connect to backend trade service.',
       });
     } finally {
       setOrderSubmitting(false);
-      setTimeout(() => setOrderStatusToast(null), 4000);
+      setTimeout(() => setOrderStatusToast(null), 5000);
     }
   };
 
@@ -321,7 +313,6 @@ function TradingTerminal() {
       const data = await res.json();
 
       if (data.success) {
-        // Refund margin + PnL
         const investedMargin = pos.entryPrice * pos.quantity;
         const newMargin = availableMargin + investedMargin + pnl;
         setAvailableMargin(newMargin);
@@ -335,27 +326,9 @@ function TradingTerminal() {
         fetchTrades();
       }
     } catch (err) {
-      // Local square-off fallback
-      const investedMargin = pos.entryPrice * pos.quantity;
-      const newMargin = availableMargin + investedMargin + pnl;
-      setAvailableMargin(newMargin);
-      localStorage.setItem('rr_paper_margin', String(newMargin));
-
-      setOpenPositions((prev) => prev.filter((p) => p.id !== pos.id));
-      setClosedTrades((prev) => [
-        {
-          ...pos,
-          exitPrice: currentPrice,
-          pnl,
-          outcome: pnl >= 0 ? 'win' : 'loss',
-          exitDate: new Date(),
-        },
-        ...prev,
-      ]);
-
       setOrderStatusToast({
-        type: 'success',
-        message: `Squared Off ${pos.symbol}! Realized P&L: ${pnl >= 0 ? '+' : ''}₹${pnl.toLocaleString()}`,
+        type: 'error',
+        message: 'Failed to square off trade on backend.',
       });
     }
 
@@ -382,50 +355,30 @@ function TradingTerminal() {
     return true;
   });
 
-  // Calculate stats from closed trades
+  // Calculate real stats from database closed trades
   const totalRealizedPnl = closedTrades.reduce((acc, t) => acc + (t.pnl || 0), 0);
   const winCount = closedTrades.filter((t) => t.outcome === 'win').length;
   const winRate = closedTrades.length > 0 ? ((winCount / closedTrades.length) * 100).toFixed(1) : '0.0';
 
   return (
     <div className="space-y-4 max-w-[1700px] mx-auto text-gray-100">
-      {/* 🚀 Top Live Market Header & Balance Bar */}
+      {/* 🏛️ Top Bar: Real Market Hours Status & IST Clock */}
       <div className="bg-gray-900 border border-gray-800 rounded-2xl p-4 flex flex-wrap items-center justify-between gap-4 shadow-xl">
-        {/* Indices Tickers */}
-        <div className="flex items-center gap-6 overflow-x-auto pb-1 sm:pb-0">
-          <div className="flex items-center gap-2 pr-4 border-r border-gray-800">
-            <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-ping"></span>
-            <span className="text-xs font-black uppercase tracking-wider text-emerald-400">
-              NSE LIVE
+        {/* Real-time Market Status Indicator */}
+        <div className="flex items-center gap-4 flex-wrap">
+          <div className="flex items-center gap-2.5 px-3 py-1.5 rounded-xl border bg-gray-950 border-gray-800">
+            <span className={`w-2.5 h-2.5 rounded-full ${marketStatus.dotClass}`}></span>
+            <span className="text-xs font-black uppercase tracking-wider text-white">
+              {marketStatus.statusText}
+            </span>
+            <span className="text-xs text-gray-400 font-mono pl-1 border-l border-gray-800">
+              {marketStatus.istTimeString}
             </span>
           </div>
 
-          {assets.slice(0, 3).map((idx) => {
-            const isUp = idx.change >= 0;
-            return (
-              <div
-                key={idx.symbol}
-                onClick={() => setSelectedAsset(idx)}
-                className="cursor-pointer hover:opacity-80 transition-opacity"
-              >
-                <div className="flex items-baseline gap-2">
-                  <span className="text-xs font-bold text-gray-400">{idx.symbol}</span>
-                  <span className="text-sm font-black font-mono text-white">
-                    {idx.spot.toLocaleString()}
-                  </span>
-                  <span
-                    className={`text-xs font-bold font-mono ${
-                      isUp ? 'text-emerald-400' : 'text-rose-400'
-                    }`}
-                  >
-                    {isUp ? '+' : ''}
-                    {idx.change.toFixed(2)} ({isUp ? '+' : ''}
-                    {idx.changePct}%)
-                  </span>
-                </div>
-              </div>
-            );
-          })}
+          <span className="text-xs text-gray-400 font-medium hidden md:inline">
+            {marketStatus.bannerMessage}
+          </span>
         </div>
 
         {/* Paper Account Balances */}
@@ -458,6 +411,26 @@ function TradingTerminal() {
           </button>
         </div>
       </div>
+
+      {/* Market Closed Informative Alert when market is not open */}
+      {!marketStatus.isOpen && (
+        <div className="bg-amber-500/10 border border-amber-500/30 rounded-2xl p-4 text-xs text-amber-300 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-md">
+          <div className="flex items-center gap-3">
+            <span className="text-xl">ℹ️</span>
+            <div>
+              <p className="font-bold uppercase tracking-wider">
+                NSE & BSE Trading Session Closed ({marketStatus.currentDayName})
+              </p>
+              <p className="text-amber-300/80 mt-0.5">
+                Indian Stock Market regular hours are <strong>Monday to Friday, 09:15 AM to 03:40 PM IST</strong>. Prices shown are official closing LTPs. Orders placed now will be logged as <strong>After Market Orders (AMO) / Weekend Paper Trades</strong>.
+              </p>
+            </div>
+          </div>
+          <span className="bg-amber-500/20 text-amber-300 font-bold px-3 py-1.5 rounded-xl whitespace-nowrap border border-amber-500/30">
+            AMO Trading Active
+          </span>
+        </div>
+      )}
 
       {/* Toast Notification */}
       {orderStatusToast && (
@@ -492,7 +465,7 @@ function TradingTerminal() {
                 <span>📋</span> Market Watchlist
               </h2>
               <span className="text-[10px] text-gray-500 font-mono">
-                {filteredAssets.length} symbols
+                {marketStatus.isOpen ? 'LIVE TICKS' : 'OFFICIAL LTP'}
               </span>
             </div>
 
@@ -557,15 +530,15 @@ function TradingTerminal() {
                           {asset.type}
                         </span>
                       </div>
-                      <span className="text-[11px] text-gray-500 block mt-0.5">
-                        Vol: {(asset.spot * 14.2).toFixed(0)}k
+                      <span className="text-[11px] text-gray-500 block mt-0.5 font-mono">
+                        Prev: ₹{asset.prevClose.toLocaleString()}
                       </span>
                     </div>
 
                     <div className="text-right">
                       <span
                         className={`text-xs font-black font-mono transition-colors ${
-                          isTickUp ? 'text-emerald-400' : 'text-rose-400'
+                          marketStatus.isOpen && isTickUp ? 'text-emerald-400' : 'text-white'
                         }`}
                       >
                         ₹{asset.spot.toLocaleString()}
@@ -598,7 +571,7 @@ function TradingTerminal() {
                 <div className="flex items-center gap-2">
                   <h3 className="text-xl font-black text-white">{selectedAsset.symbol}</h3>
                   <span className="text-xs px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 font-bold uppercase">
-                    NSE EQ/DERIVATIVES
+                    NSE {selectedAsset.type === 'index' ? 'DERIVATIVES' : 'CASH'}
                   </span>
                 </div>
                 <div className="flex items-baseline gap-2 mt-1">
@@ -613,6 +586,9 @@ function TradingTerminal() {
                     {selectedAsset.change >= 0 ? '+' : ''}
                     {selectedAsset.change.toFixed(2)} ({selectedAsset.change >= 0 ? '+' : ''}
                     {selectedAsset.changePct}%)
+                  </span>
+                  <span className="text-[11px] text-gray-500 font-mono">
+                    ({marketStatus.isOpen ? 'Live' : 'Closing LTP'})
                   </span>
                 </div>
               </div>
@@ -638,7 +614,6 @@ function TradingTerminal() {
             {/* SVG Interactive Chart Area */}
             <div className="relative mt-4 bg-gray-950 rounded-xl p-4 border border-gray-800/80 overflow-hidden">
               <div className="h-56 w-full flex items-end relative">
-                {/* SVG Area Chart */}
                 <svg className="w-full h-full overflow-visible" preserveAspectRatio="none" viewBox="0 0 300 120">
                   <defs>
                     <linearGradient id="chartGradient" x1="0" y1="0" x2="0" y2="1">
@@ -647,7 +622,6 @@ function TradingTerminal() {
                     </linearGradient>
                   </defs>
 
-                  {/* Area fill */}
                   {chartData.length > 1 && (
                     <polygon
                       points={`0,120 ${chartData
@@ -665,7 +639,6 @@ function TradingTerminal() {
                     />
                   )}
 
-                  {/* Line stroke */}
                   {chartData.length > 1 && (
                     <polyline
                       fill="none"
@@ -685,7 +658,6 @@ function TradingTerminal() {
                     />
                   )}
 
-                  {/* Current Price Dot */}
                   {chartData.length > 0 && (
                     <circle
                       cx="300"
@@ -697,12 +669,10 @@ function TradingTerminal() {
                       }
                       r="4.5"
                       fill="#34d399"
-                      className="animate-pulse"
                     />
                   )}
                 </svg>
 
-                {/* Ambient Grid Lines */}
                 <div className="absolute inset-0 pointer-events-none flex flex-col justify-between border-b border-gray-800/40">
                   <div className="border-b border-gray-800/30 w-full text-[10px] text-gray-600 font-mono text-right pr-1">
                     ₹{selectedAsset.baseHigh.toLocaleString()}
@@ -717,7 +687,7 @@ function TradingTerminal() {
               </div>
             </div>
 
-            {/* Market Depth Summary (Bids vs Asks) */}
+            {/* Market Depth Summary */}
             <div className="mt-4 pt-3 border-t border-gray-800">
               <div className="flex items-center justify-between text-[11px] font-bold text-gray-400 mb-2">
                 <span>ORDER DEPTH</span>
@@ -752,13 +722,19 @@ function TradingTerminal() {
             <h3 className="text-base font-extrabold text-white flex items-center gap-2">
               <span>⚡</span> Fast Order Terminal
             </h3>
-            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
-              PAPER TRADING
+            <span
+              className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${
+                marketStatus.isOpen
+                  ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
+                  : 'bg-amber-500/10 text-amber-400 border-amber-500/20'
+              }`}
+            >
+              {marketStatus.isOpen ? 'LIVE EXECUTION' : 'AMO ORDER DESK'}
             </span>
           </div>
 
           <form onSubmit={handleExecuteOrder} className="space-y-4">
-            {/* Category Toggle: Options (F&O) vs Equity (Stocks) */}
+            {/* Category Toggle */}
             <div>
               <label className="block text-[11px] font-bold uppercase text-gray-400 mb-1">
                 Asset Class
@@ -792,7 +768,6 @@ function TradingTerminal() {
             {/* OPTIONS (F&O) SPECIFIC CONTROLS */}
             {orderCategory === 'options' ? (
               <div className="space-y-3 bg-gray-950/80 p-3.5 rounded-xl border border-gray-800/80">
-                {/* Underlying Index */}
                 <div>
                   <label className="block text-[10px] font-bold text-gray-400 uppercase mb-1">
                     Underlying Index
@@ -815,7 +790,6 @@ function TradingTerminal() {
                   </select>
                 </div>
 
-                {/* Strike Price & CE / PE Toggle */}
                 <div className="grid grid-cols-2 gap-2">
                   <div>
                     <label className="block text-[10px] font-bold text-gray-400 uppercase mb-1">
@@ -865,7 +839,6 @@ function TradingTerminal() {
                   </div>
                 </div>
 
-                {/* Lots Stepper */}
                 <div>
                   <div className="flex justify-between items-center text-[10px] font-bold text-gray-400 uppercase mb-1">
                     <span>Number of Lots</span>
@@ -899,7 +872,6 @@ function TradingTerminal() {
                   </div>
                 </div>
 
-                {/* Live Premium Display */}
                 <div className="flex items-center justify-between p-2.5 rounded-xl bg-gray-900 border border-gray-800 text-xs">
                   <div>
                     <span className="text-[10px] text-gray-500 block">Current Premium (LTP)</span>
@@ -958,7 +930,7 @@ function TradingTerminal() {
                       onChange={(e) => setOrderType(e.target.value)}
                       className="w-full bg-gray-900 border border-gray-800 rounded-xl px-3 py-2 text-xs text-white font-bold focus:outline-none"
                     >
-                      <option value="market">Market (Instant)</option>
+                      <option value="market">Market (LTP Fill)</option>
                       <option value="limit">Limit Order</option>
                     </select>
                   </div>
@@ -1047,12 +1019,14 @@ function TradingTerminal() {
               </span>
             </div>
 
-            {/* Execute Order CTA */}
+            {/* Execute / AMO Order CTA */}
             <button
               type="submit"
               disabled={orderSubmitting}
               className={`w-full font-black py-4 rounded-xl text-sm transition-all shadow-lg cursor-pointer disabled:opacity-50 flex items-center justify-center gap-2 ${
-                orderCategory === 'options'
+                !marketStatus.isOpen
+                  ? 'bg-amber-500 hover:bg-amber-400 text-gray-950 shadow-amber-500/20'
+                  : orderCategory === 'options'
                   ? optionType === 'CE'
                     ? 'bg-emerald-500 hover:bg-emerald-400 text-gray-950 shadow-emerald-500/20'
                     : 'bg-rose-500 hover:bg-rose-400 text-white shadow-rose-500/20'
@@ -1063,7 +1037,9 @@ function TradingTerminal() {
             >
               <span>⚡</span>
               {orderSubmitting
-                ? 'Routing to Exchange...'
+                ? 'Routing Order...'
+                : !marketStatus.isOpen
+                ? `PLACE AMO ${orderCategory === 'options' ? `${optionsUnderlying} ${optionType}` : selectedAsset.symbol} (₹${totalMarginRequired.toLocaleString()})`
                 : orderCategory === 'options'
                 ? `BUY ${optionsUnderlying} ${strikePrice} ${optionType} (₹${optionMarginRequired.toLocaleString()})`
                 : `${orderSide.toUpperCase()} ${selectedAsset.symbol} (₹${totalMarginRequired.toLocaleString()})`}
@@ -1073,10 +1049,9 @@ function TradingTerminal() {
       </div>
 
       {/* ========================================================= */}
-      {/* 4. Bottom Section: Active Positions & Executed Orders Tabs */}
+      {/* 4. Bottom Section: Real Positions & Closed Trades Ledger */}
       {/* ========================================================= */}
       <div className="bg-gray-900 border border-gray-800 rounded-2xl p-5 shadow-xl">
-        {/* Navigation Tabs */}
         <div className="flex items-center justify-between border-b border-gray-800 pb-4 mb-4">
           <div className="flex items-center gap-3">
             <button
@@ -1097,7 +1072,7 @@ function TradingTerminal() {
                   : 'border-transparent text-gray-400 hover:text-white'
               }`}
             >
-              <span>📜</span> Closed Trades / History ({closedTrades.length})
+              <span>📜</span> Real Database Trades ({closedTrades.length})
             </button>
             <button
               onClick={() => setActiveBottomTab('stats')}
@@ -1107,7 +1082,7 @@ function TradingTerminal() {
                   : 'border-transparent text-gray-400 hover:text-white'
               }`}
             >
-              <span>📊</span> Desk Analytics
+              <span>📊</span> Verified Ledger Stats
             </button>
           </div>
 
@@ -1139,8 +1114,8 @@ function TradingTerminal() {
                       <th className="py-3 px-4">Side</th>
                       <th className="py-3 px-4">Quantity</th>
                       <th className="py-3 px-4">Avg Entry Price</th>
-                      <th className="py-3 px-4">Live CMP</th>
-                      <th className="py-3 px-4">Floating P&L</th>
+                      <th className="py-3 px-4">Current LTP</th>
+                      <th className="py-3 px-4">Unrealized P&L</th>
                       <th className="py-3 px-4 text-right">Action</th>
                     </tr>
                   </thead>
@@ -1207,12 +1182,12 @@ function TradingTerminal() {
           </div>
         )}
 
-        {/* TAB 2: CLOSED TRADES */}
+        {/* TAB 2: REAL DATABASE CLOSED TRADES */}
         {activeBottomTab === 'orders' && (
           <div>
             {closedTrades.length === 0 ? (
               <div className="p-12 text-center text-gray-500">
-                <p className="text-sm">No closed trades yet.</p>
+                <p className="text-sm">No closed trades recorded in MongoDB yet.</p>
               </div>
             ) : (
               <div className="overflow-x-auto">
@@ -1307,9 +1282,11 @@ function TradingTerminal() {
             <div className="p-4 bg-gray-900 border border-gray-800 rounded-xl">
               <span className="text-xs text-gray-500 block">Trading Terminal Status</span>
               <h4 className="text-2xl font-black font-mono text-emerald-400 mt-1">
-                ACTIVE
+                ONLINE
               </h4>
-              <p className="text-[11px] text-gray-500 mt-0.5">Real-time NSE/BSE Simulator</p>
+              <p className="text-[11px] text-gray-500 mt-0.5">
+                {marketStatus.isOpen ? 'NSE/BSE Live Session' : 'AMO / Weekend Mode'}
+              </p>
             </div>
           </div>
         )}

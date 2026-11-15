@@ -1,6 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import CheckoutModal from '../components/CheckoutModal';
+import { getIndianMarketStatus } from '../utils/marketHours';
 
 function UserPortal() {
   const user = JSON.parse(localStorage.getItem('rr_auth') || '{}');
@@ -11,60 +12,38 @@ function UserPortal() {
   });
   const [checkoutPlan, setCheckoutPlan] = useState(null);
 
-  const [signals] = useState([
-    {
-      id: 101,
-      pair: 'NIFTY 50 24800 CE (Intraday Momentum Call)',
-      entry: '165.00',
-      target: '245.00 (+48%)',
-      stoploss: '130.00',
-      status: 'LIVE CALL ⚡',
-      time: 'Just Now',
-      isHighConviction: true,
-    },
-    {
-      id: 1,
-      pair: 'NIFTY 50 24500 CE',
-      entry: '145.00',
-      target: '185.00',
-      stoploss: '120.00',
-      status: 'ACTIVE',
-      time: '15 mins ago',
-    },
-    {
-      id: 2,
-      pair: 'BANKNIFTY 52000 PE',
-      entry: '310.00',
-      target: '420.00',
-      stoploss: '260.00',
-      status: 'HIT TARGET 🚀',
-      time: '2 hours ago',
-    },
-    {
-      id: 3,
-      pair: 'RELIANCE 3000 CE',
-      entry: '42.50',
-      target: '65.00',
-      stoploss: '32.00',
-      status: 'HIT TARGET 🚀',
-      time: 'Yesterday',
-    },
-  ]);
+  // Real Market Hours status
+  const [marketStatus, setMarketStatus] = useState(getIndianMarketStatus());
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setMarketStatus(getIndianMarketStatus());
+    }, 1000);
+    return () => clearInterval(timer);
+  }, []);
+
+  // ONLY real signals/trades from MongoDB
+  const [signals, setSignals] = useState([]);
+  const [loadingSignals, setLoadingSignals] = useState(true);
+
+  const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+  const token = localStorage.getItem('rr_token');
+  const headers = useMemo(
+    () => ({
+      'Content-Type': 'application/json',
+      ...(token && { Authorization: `Bearer ${token}` }),
+    }),
+    [token]
+  );
 
   useEffect(() => {
-    const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
-    const token = localStorage.getItem('rr_token');
     if (!token) return;
 
-    fetch(`${API_URL}/api/auth/me`, {
-      headers: { Authorization: `Bearer ${token}` },
-    })
+    // Fetch user member status
+    fetch(`${API_URL}/api/auth/me`, { headers })
       .then((res) => res.json())
       .then((resData) => {
         if (resData.success && resData.user) {
-          fetch(`${API_URL}/api/members?search=${encodeURIComponent(resData.user.email)}`, {
-            headers: { Authorization: `Bearer ${token}` },
-          })
+          fetch(`${API_URL}/api/members?search=${encodeURIComponent(resData.user.email)}`, { headers })
             .then((mRes) => mRes.json())
             .then((mData) => {
               if (mData.success && mData.data && mData.data.length > 0) {
@@ -75,27 +54,52 @@ function UserPortal() {
         }
       })
       .catch(() => {});
+
+    // Fetch real trades/signals from database
+    fetch(`${API_URL}/api/trades`, { headers })
+      .then((res) => res.json())
+      .then((resData) => {
+        if (resData.success && Array.isArray(resData.data)) {
+          setSignals(resData.data);
+        }
+      })
+      .catch(() => {})
+      .finally(() => setLoadingSignals(false));
   }, []);
 
   return (
     <div className="space-y-8 max-w-5xl">
-      {/* Active Market Session & Live Terminal Banner */}
-      <div className="bg-gradient-to-r from-gray-900 via-gray-900 to-gray-800 border border-emerald-500/30 rounded-2xl p-4 text-white flex flex-col sm:flex-row items-center justify-between gap-4 shadow-lg shadow-emerald-500/5">
+      {/* 🏛️ Real-time Market Session & Hours Notice */}
+      <div
+        className={`border rounded-2xl p-4 text-white flex flex-col sm:flex-row items-center justify-between gap-4 shadow-lg ${
+          marketStatus.isOpen
+            ? 'bg-gradient-to-r from-gray-900 via-gray-900 to-gray-800 border-emerald-500/30 shadow-emerald-500/5'
+            : 'bg-gradient-to-r from-gray-900 via-gray-900 to-gray-800 border-amber-500/30 shadow-amber-500/5'
+        }`}
+      >
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-xl text-emerald-400 font-bold shrink-0">
-            ⚡
+          <div
+            className={`w-10 h-10 rounded-xl flex items-center justify-center text-xl font-bold shrink-0 border ${
+              marketStatus.isOpen
+                ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400'
+                : 'bg-amber-500/10 border-amber-500/20 text-amber-400'
+            }`}
+          >
+            {marketStatus.isOpen ? '⚡' : '🏛️'}
           </div>
           <div>
             <div className="flex items-center gap-2">
               <h3 className="font-bold text-sm uppercase tracking-wide text-white">
-                Live Trading Terminal & Options Desk
+                {marketStatus.statusText}
               </h3>
-              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
-                ACTIVE
+              <span className="text-[10px] font-mono text-gray-400">
+                {marketStatus.istTimeString}
               </span>
             </div>
             <p className="text-xs text-gray-400 font-medium mt-0.5">
-              Execute live paper trades for Stocks and NIFTY/BANKNIFTY Options with instant order fills.
+              {marketStatus.isOpen
+                ? 'Live NSE/BSE Trading Session Active. Real-time executions are in progress.'
+                : `Indian Stock Markets are closed (${marketStatus.currentDayName}). Hours: ${marketStatus.timingLabel}. Trading resumes Monday at 09:15 AM IST.`}
             </p>
           </div>
         </div>
@@ -114,7 +118,9 @@ function UserPortal() {
             ⭐ Subscriber Member Portal
           </span>
           <h1 className="text-3xl font-extrabold text-white">Welcome back, {user.name || 'Trader'}!</h1>
-          <p className="text-gray-400 text-sm mt-1">Access your live trading signals, VIP Telegram channel, and membership status.</p>
+          <p className="text-gray-400 text-sm mt-1">
+            Access your verified trading signals, VIP Telegram channel, and membership status.
+          </p>
         </div>
 
         <a
@@ -197,59 +203,100 @@ function UserPortal() {
         </div>
       </div>
 
-      {/* Live Trading Signals Feed */}
+      {/* Verified Real Trading Signals Feed (ONLY Real Database Records) */}
       <div className="bg-gray-900 border border-gray-800 rounded-2xl p-6">
         <div className="flex items-center justify-between mb-6">
           <div>
             <h3 className="text-xl font-bold text-white">Live Trading Signals Feed</h3>
-            <p className="text-xs text-gray-400 mt-0.5">Real-time Call/Put options trade ideas from expert analysts.</p>
+            <p className="text-xs text-gray-400 mt-0.5">
+              Verified Call/Put options trade ideas published by desk analysts.
+            </p>
           </div>
-          <span className="text-xs font-semibold text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-3 py-1 rounded-full flex items-center gap-1.5">
-            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-            Realtime Stream
+          <span
+            className={`text-xs font-semibold px-3 py-1 rounded-full flex items-center gap-1.5 border ${
+              marketStatus.isOpen
+                ? 'text-emerald-400 bg-emerald-500/10 border-emerald-500/20'
+                : 'text-amber-400 bg-amber-500/10 border-amber-500/20'
+            }`}
+          >
+            <span
+              className={`w-2 h-2 rounded-full ${
+                marketStatus.isOpen ? 'bg-emerald-400 animate-pulse' : 'bg-amber-400'
+              }`}
+            ></span>
+            {marketStatus.isOpen ? 'Live Stream Active' : 'Session Paused (Weekend)'}
           </span>
         </div>
 
-        <div className="space-y-4">
-          {signals.map((sig) => (
-            <div
-              key={sig.id}
-              className={`rounded-xl p-5 flex flex-col md:flex-row md:items-center justify-between gap-4 border transition-all ${
-                sig.isHighConviction
-                  ? 'bg-gradient-to-r from-gray-950 via-emerald-950/15 to-gray-950 border-emerald-500/40 shadow-lg shadow-emerald-500/5'
-                  : 'bg-gray-950 border-gray-800/80'
-              }`}
-            >
-              <div>
-                <div className="flex items-center gap-3 mb-2 flex-wrap">
-                  <span className={`text-lg font-extrabold ${sig.isHighConviction ? 'text-emerald-300' : 'text-white'}`}>
-                    {sig.pair}
-                  </span>
-                  <span
-                    className={`text-xs font-bold px-2.5 py-0.5 rounded-full ${
-                      sig.isHighConviction
-                        ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40'
-                        : sig.status.includes('TARGET')
-                        ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
-                        : 'bg-blue-500/10 text-blue-400 border border-blue-500/20'
-                    }`}
-                  >
-                    {sig.status}
-                  </span>
+        {signals.length === 0 ? (
+          <div className="p-12 text-center text-gray-500 space-y-2 border border-gray-800/60 rounded-xl bg-gray-950/60">
+            <span className="text-3xl block">📡</span>
+            <p className="text-sm font-medium text-gray-300">
+              {marketStatus.isOpen
+                ? 'No active signals broadcasted yet.'
+                : `Market is closed (${marketStatus.currentDayName}). Signal broadcasts are paused.`}
+            </p>
+            <p className="text-xs text-gray-500 max-w-md mx-auto">
+              Real-time options and momentum calls are broadcasted live during market hours (Monday to Friday, 09:15 AM – 03:40 PM IST).
+            </p>
+          </div>
+        ) : (
+          <div className="space-y-4">
+            {signals.map((sig) => (
+              <div
+                key={sig.id}
+                className="bg-gray-950 border border-gray-800/80 rounded-xl p-5 flex flex-col md:flex-row md:items-center justify-between gap-4 transition-all"
+              >
+                <div>
+                  <div className="flex items-center gap-3 mb-2 flex-wrap">
+                    <span className="text-lg font-extrabold text-white">
+                      {sig.symbol}
+                    </span>
+                    <span
+                      className={`text-xs font-bold px-2.5 py-0.5 rounded-full ${
+                        sig.exitPrice
+                          ? sig.outcome === 'win'
+                            ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
+                            : 'bg-rose-500/10 text-rose-400 border border-rose-500/20'
+                          : 'bg-blue-500/10 text-blue-400 border border-blue-500/20'
+                      }`}
+                    >
+                      {sig.exitPrice
+                        ? `CLOSED (${sig.outcome?.toUpperCase()})`
+                        : `${sig.tradeType?.toUpperCase()} ACTIVE`}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-6 text-xs text-gray-400 flex-wrap font-mono">
+                    <span>Entry: <strong className="text-gray-200">₹{sig.entryPrice}</strong></span>
+                    {sig.target && (
+                      <span>Target: <strong className="text-green-400 font-bold">₹{sig.target}</strong></span>
+                    )}
+                    {sig.stopLoss && (
+                      <span>Stoploss: <strong className="text-rose-400 font-bold">₹{sig.stopLoss}</strong></span>
+                    )}
+                    {sig.exitPrice && (
+                      <span>Exit: <strong className="text-white font-bold">₹{sig.exitPrice}</strong></span>
+                    )}
+                    {sig.pnl !== undefined && sig.exitPrice && (
+                      <span>
+                        P&L:{' '}
+                        <strong
+                          className={sig.pnl >= 0 ? 'text-emerald-400 font-bold' : 'text-rose-400 font-bold'}
+                        >
+                          {sig.pnl >= 0 ? '+' : ''}₹{sig.pnl.toLocaleString()}
+                        </strong>
+                      </span>
+                    )}
+                  </div>
                 </div>
-                <div className="flex items-center gap-6 text-xs text-gray-400 flex-wrap">
-                  <span>Entry: <strong className="text-gray-200">₹{sig.entry}</strong></span>
-                  <span>Target: <strong className="text-green-400 font-bold">₹{sig.target}</strong></span>
-                  <span>Stoploss: <strong className="text-rose-400 font-bold">₹{sig.stoploss}</strong></span>
-                </div>
-              </div>
 
-              <div className="text-xs text-gray-500 font-medium self-end md:self-center">
-                {sig.time}
+                <div className="text-xs text-gray-500 font-medium self-end md:self-center font-mono">
+                  {sig.createdAt ? new Date(sig.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'Recent'}
+                </div>
               </div>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* Realistic Checkout Modal when triggered */}

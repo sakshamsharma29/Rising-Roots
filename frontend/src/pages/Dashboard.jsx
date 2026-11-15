@@ -1,31 +1,47 @@
 import React, { useEffect, useState } from 'react';
+import { getIndianMarketStatus } from '../utils/marketHours';
 
 function Dashboard({ onOpenAddMember }) {
   const [stats, setStats] = useState({
-    totalMembers: 1250,
-    activeMembers: 982,
-    expiredMembers: 76,
-    monthlyRevenue: 240000,
-    renewalRate: '98%',
+    totalMembers: 0,
+    activeMembers: 0,
+    expiredMembers: 0,
+    monthlyRevenue: 0,
+    renewalRate: '100%',
   });
 
-  const [activities, setActivities] = useState([
-    { id: 1, text: 'Alice Smith upgraded to VIP Signals', time: '10 mins ago', type: 'upgrade' },
-    { id: 2, text: 'New member Ethan Hunt joined Pro Trader', time: '45 mins ago', type: 'join' },
-    { id: 3, text: 'Auto-renewal processed for ₹2,499', time: '2 hours ago', type: 'payment' },
-    { id: 4, text: 'Announcement broadcasted to 982 members', time: '4 hours ago', type: 'announcement' },
-  ]);
-
+  const [activities, setActivities] = useState([]);
   const [showBroadcastModal, setShowBroadcastModal] = useState(false);
   const [announcementText, setAnnouncementText] = useState('');
   const [broadcastSent, setBroadcastSent] = useState(false);
 
+  // Market status
+  const [marketStatus, setMarketStatus] = useState(getIndianMarketStatus());
   useEffect(() => {
-    const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+    const timer = setInterval(() => {
+      setMarketStatus(getIndianMarketStatus());
+    }, 1000);
+    return () => clearInterval(timer);
+  }, []);
+
+  const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+
+  useEffect(() => {
+    // Fetch real stats
     fetch(`${API_URL}/api/stats`)
       .then((res) => res.json())
       .then((resData) => {
-        if (resData.success) setStats(resData.data);
+        if (resData.success && resData.data) setStats(resData.data);
+      })
+      .catch(() => {});
+
+    // Fetch real database activities
+    fetch(`${API_URL}/api/activities`)
+      .then((res) => res.json())
+      .then((resData) => {
+        if (resData.success && Array.isArray(resData.data)) {
+          setActivities(resData.data);
+        }
       })
       .catch(() => {});
   }, []);
@@ -34,16 +50,27 @@ function Dashboard({ onOpenAddMember }) {
     e.preventDefault();
     if (!announcementText.trim()) return;
 
-    setActivities((prev) => [
-      { id: Date.now(), text: `Announcement: "${announcementText}"`, time: 'Just now', type: 'announcement' },
-      ...prev,
-    ]);
-    setAnnouncementText('');
-    setBroadcastSent(true);
-    setTimeout(() => {
-      setBroadcastSent(false);
-      setShowBroadcastModal(false);
-    }, 1500);
+    fetch(`${API_URL}/api/broadcast`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ message: announcementText }),
+    })
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.success) {
+          setActivities((prev) => [
+            { id: Date.now(), text: `Broadcast: "${announcementText}"`, time: 'Just now', type: 'announcement' },
+            ...prev,
+          ]);
+          setAnnouncementText('');
+          setBroadcastSent(true);
+          setTimeout(() => {
+            setBroadcastSent(false);
+            setShowBroadcastModal(false);
+          }, 1500);
+        }
+      })
+      .catch(() => {});
   };
 
   return (
@@ -51,17 +78,26 @@ function Dashboard({ onOpenAddMember }) {
       {/* Header Banner */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-gradient-to-r from-gray-900 via-gray-900 to-gray-800 border border-gray-800 p-8 rounded-2xl">
         <div>
-          <span className="inline-block px-3 py-1 rounded-full bg-green-500/10 text-green-400 text-xs font-semibold border border-green-500/20 mb-3">
-            🚀 Trading Community Overview
-          </span>
+          <div className="flex items-center gap-2 mb-3">
+            <span
+              className={`inline-block px-3 py-1 rounded-full text-xs font-semibold border ${marketStatus.badgeClass}`}
+            >
+              ● {marketStatus.statusText}
+            </span>
+            <span className="text-xs text-gray-400 font-mono">
+              {marketStatus.istTimeString}
+            </span>
+          </div>
           <h1 className="text-3xl font-extrabold text-white tracking-tight">Rising Roots Control Center</h1>
-          <p className="text-gray-400 text-sm mt-1">Manage subscriptions, members, and announcements in real-time.</p>
+          <p className="text-gray-400 text-sm mt-1">
+            Verified trading community management and institutional options desk.
+          </p>
         </div>
 
         <div className="flex items-center gap-3">
           <button
             onClick={() => setShowBroadcastModal(true)}
-            className="bg-gray-800 hover:bg-gray-700 text-white font-medium px-4 py-2.5 rounded-xl text-sm transition-colors border border-gray-700 flex items-center gap-2"
+            className="bg-gray-800 hover:bg-gray-700 text-white font-medium px-4 py-2.5 rounded-xl text-sm transition-colors border border-gray-700 flex items-center gap-2 cursor-pointer"
           >
             <svg className="w-4 h-4 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 5.882V19.24a1.76 1.76 0 01-3.417.592l-2.147-6.15M18 13a3 3 0 100-6M5.436 13.683A4.001 4.001 0 017 6h1.832c4.1 0 7.625-1.234 9.168-3v14c-1.543-1.766-5.067-3-9.168-3H7a3.988 3.988 0 01-1.564-.317z" />
@@ -70,14 +106,14 @@ function Dashboard({ onOpenAddMember }) {
           </button>
           <button
             onClick={onOpenAddMember}
-            className="bg-green-500 hover:bg-green-400 text-gray-950 font-bold px-5 py-2.5 rounded-xl text-sm transition-colors flex items-center gap-2"
+            className="bg-green-500 hover:bg-green-400 text-gray-950 font-bold px-5 py-2.5 rounded-xl text-sm transition-colors flex items-center gap-2 cursor-pointer"
           >
             + Add Member
           </button>
         </div>
       </div>
 
-      {/* Metrics Cards */}
+      {/* Real Metrics Cards from MongoDB */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
         <div className="bg-gray-900 border border-gray-800 p-6 rounded-2xl hover:border-gray-700 transition-all">
           <div className="flex items-center justify-between text-gray-400 mb-2">
@@ -89,7 +125,7 @@ function Dashboard({ onOpenAddMember }) {
             </div>
           </div>
           <h3 className="text-3xl font-extrabold text-white">{stats.totalMembers}</h3>
-          <p className="text-xs text-gray-500 mt-2">+48 new this week</p>
+          <p className="text-xs text-gray-500 mt-2">Verified database accounts</p>
         </div>
 
         <div className="bg-gray-900 border border-gray-800 p-6 rounded-2xl hover:border-gray-700 transition-all">
@@ -101,8 +137,10 @@ function Dashboard({ onOpenAddMember }) {
               </svg>
             </div>
           </div>
-          <h3 className="text-3xl font-extrabold text-green-400">₹{(stats.monthlyRevenue / 100000).toFixed(1)}L</h3>
-          <p className="text-xs text-green-400 font-medium mt-2">+12.4% vs last month</p>
+          <h3 className="text-3xl font-extrabold text-green-400 font-mono">
+            ₹{stats.monthlyRevenue.toLocaleString()}
+          </h3>
+          <p className="text-xs text-green-400 font-medium mt-2">Active subscriber run-rate</p>
         </div>
 
         <div className="bg-gray-900 border border-gray-800 p-6 rounded-2xl hover:border-gray-700 transition-all">
@@ -128,24 +166,32 @@ function Dashboard({ onOpenAddMember }) {
             </div>
           </div>
           <h3 className="text-3xl font-extrabold text-rose-400">{stats.expiredMembers}</h3>
-          <p className="text-xs text-rose-400 font-medium mt-2">Requires renewal reminder</p>
+          <p className="text-xs text-rose-400 font-medium mt-2">
+            {stats.expiredMembers === 0 ? 'All subscriptions current' : 'Requires renewal reminder'}
+          </p>
         </div>
       </div>
 
-      {/* Activity Feed */}
+      {/* Real Activity Feed from MongoDB */}
       <div className="bg-gray-900 border border-gray-800 rounded-2xl p-6">
         <h3 className="text-lg font-bold text-white mb-4">Live Community Activity</h3>
-        <div className="space-y-4">
-          {activities.map((act) => (
-            <div key={act.id} className="flex items-center justify-between p-3 rounded-xl bg-gray-950/60 border border-gray-800/60">
-              <div className="flex items-center gap-3">
-                <span className="w-2.5 h-2.5 rounded-full bg-green-400"></span>
-                <span className="text-sm text-gray-200 font-medium">{act.text}</span>
+        {activities.length === 0 ? (
+          <div className="p-8 text-center text-gray-500 text-sm">
+            No recent activity recorded yet.
+          </div>
+        ) : (
+          <div className="space-y-4">
+            {activities.map((act) => (
+              <div key={act.id} className="flex items-center justify-between p-3 rounded-xl bg-gray-950/60 border border-gray-800/60">
+                <div className="flex items-center gap-3">
+                  <span className="w-2.5 h-2.5 rounded-full bg-green-400"></span>
+                  <span className="text-sm text-gray-200 font-medium">{act.text}</span>
+                </div>
+                <span className="text-xs text-gray-500 font-medium font-mono">{act.time}</span>
               </div>
-              <span className="text-xs text-gray-500 font-medium">{act.time}</span>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* Broadcast Announcement Modal */}
@@ -163,7 +209,7 @@ function Dashboard({ onOpenAddMember }) {
               <form onSubmit={handleSendBroadcast} className="space-y-4">
                 <textarea
                   rows="4"
-                  placeholder="Enter message (e.g. NIFTY 50 Breakout Alert: Watch 24,500 Call Options...)"
+                  placeholder="Enter message (e.g. NIFTY 50 Breakout Alert: Watch 24,800 Call Options...)"
                   value={announcementText}
                   onChange={(e) => setAnnouncementText(e.target.value)}
                   className="w-full bg-gray-950 border border-gray-800 rounded-xl p-3 text-sm text-white focus:border-green-500 focus:outline-none"
@@ -174,13 +220,13 @@ function Dashboard({ onOpenAddMember }) {
                   <button
                     type="button"
                     onClick={() => setShowBroadcastModal(false)}
-                    className="px-4 py-2 text-sm text-gray-400 hover:text-white"
+                    className="px-4 py-2 text-sm text-gray-400 hover:text-white cursor-pointer"
                   >
                     Cancel
                   </button>
                   <button
                     type="submit"
-                    className="bg-green-500 hover:bg-green-400 text-gray-950 font-bold px-5 py-2 rounded-xl text-sm"
+                    className="bg-green-500 hover:bg-green-400 text-gray-950 font-bold px-5 py-2 rounded-xl text-sm cursor-pointer"
                   >
                     Send Now
                   </button>

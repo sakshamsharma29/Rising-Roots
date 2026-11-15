@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import CheckoutModal from '../components/CheckoutModal';
+import { getIndianMarketStatus } from '../utils/marketHours';
 
 function LandingPage() {
   const navigate = useNavigate();
@@ -8,6 +9,32 @@ function LandingPage() {
   const [selectedRole, setSelectedRole] = useState(null);
   const [showJoinModal, setShowJoinModal] = useState(searchParams.get('join') === 'true');
   const [checkoutPlan, setCheckoutPlan] = useState(null);
+
+  // Real Market Status (NSE / BSE IST hours)
+  const [marketStatus, setMarketStatus] = useState(getIndianMarketStatus());
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setMarketStatus(getIndianMarketStatus());
+    }, 1000);
+    return () => clearInterval(timer);
+  }, []);
+
+  // Real Database Stats
+  const [platformStats, setPlatformStats] = useState({
+    totalMembers: 8,
+    activeMembers: 8,
+    monthlyRevenue: 24990,
+    renewalRate: '100%',
+  });
+
+  useEffect(() => {
+    fetch(`${API_URL}/api/stats`)
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.success && data.data) setPlatformStats(data.data);
+      })
+      .catch(() => {});
+  }, []);
 
   useEffect(() => {
     if (searchParams.get('join') === 'true') {
@@ -167,30 +194,27 @@ function LandingPage() {
 
   return (
     <div className="bg-gray-950 text-white min-h-screen font-sans antialiased">
-      {/* Evergreen Announcement Top Bar */}
-      <div className="bg-gradient-to-r from-emerald-600 via-green-600 to-teal-600 text-gray-950 py-2.5 px-4 text-center font-bold text-xs flex flex-wrap items-center justify-center gap-2 shadow-md relative z-40">
+      {/* Real-time Indian Market Hours Announcement Top Bar */}
+      <div className="bg-gradient-to-r from-gray-900 via-gray-950 to-gray-900 border-b border-gray-800 text-gray-300 py-2.5 px-4 text-center text-xs flex flex-wrap items-center justify-center gap-3 shadow-md relative z-40">
         <span className="flex items-center gap-1.5">
-          <span className="bg-gray-950 text-emerald-400 font-mono px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-wider">
-            LIVE DESK
+          <span className={`w-2 h-2 rounded-full ${marketStatus.dotClass}`}></span>
+          <span className="font-extrabold uppercase tracking-wider text-white">
+            {marketStatus.statusText}
           </span>
-          <span className="font-extrabold uppercase tracking-wider">Algorithmic Signals & Paper Trading Terminal:</span>
-          <span className="font-semibold text-gray-950">Active on NIFTY & BANKNIFTY. Use Coupon:</span>
-          <span className="bg-gray-950 text-emerald-400 font-mono px-2 py-0.5 rounded text-[11px] font-black border border-emerald-400/40">
-            ROOTS20
-          </span>
+          <span className="text-gray-400 font-mono">({marketStatus.istTimeString})</span>
+          <span className="text-gray-500">•</span>
+          <span className="text-gray-400">{marketStatus.timingLabel}</span>
         </span>
-        <button
-          onClick={() =>
-            setCheckoutPlan({
-              id: 'pro',
-              name: 'Pro Trader Desk',
-              price: '₹2,499',
-            })
-          }
-          className="ml-2 bg-gray-950 hover:bg-gray-900 text-emerald-400 text-[11px] font-black px-3 py-1 rounded-full border border-emerald-400/40 transition-all cursor-pointer shadow"
+        <span className="hidden md:inline text-gray-600">|</span>
+        <span className="text-emerald-400 font-bold hidden sm:inline">
+          Use code ROOTS20 for 20% off
+        </span>
+        <Link
+          to="/dashboard/terminal"
+          className="ml-2 bg-emerald-500 hover:bg-emerald-400 text-gray-950 text-[11px] font-black px-3 py-1 rounded-full transition-all cursor-pointer shadow"
         >
-          Claim Pro Desk →
-        </button>
+          Open Trading Terminal →
+        </Link>
       </div>
 
       {/* Navbar */}
@@ -267,17 +291,19 @@ function LandingPage() {
 
           <div className="flex items-center gap-6 pt-4">
             <div>
-              <h3 className="text-3xl font-extrabold text-white">12+</h3>
-              <span className="text-xs text-gray-500 font-medium">Active Members</span>
+              <h3 className="text-3xl font-extrabold text-white">{platformStats.activeMembers}</h3>
+              <span className="text-xs text-gray-500 font-medium">Active Subscribers</span>
             </div>
             <div className="h-10 w-px bg-gray-800"></div>
             <div>
-              <h3 className="text-3xl font-extrabold text-green-400">₹2.4L</h3>
+              <h3 className="text-3xl font-extrabold text-green-400 font-mono">
+                ₹{platformStats.monthlyRevenue.toLocaleString()}
+              </h3>
               <span className="text-xs text-gray-500 font-medium">Monthly MRR</span>
             </div>
             <div className="h-10 w-px bg-gray-800"></div>
             <div>
-              <h3 className="text-3xl font-extrabold text-amber-400">98%</h3>
+              <h3 className="text-3xl font-extrabold text-emerald-400">{platformStats.renewalRate}</h3>
               <span className="text-xs text-gray-500 font-medium">Renewal Rate</span>
             </div>
           </div>
@@ -292,29 +318,31 @@ function LandingPage() {
                 <span className="w-3 h-3 rounded-full bg-amber-500"></span>
                 <span className="w-3 h-3 rounded-full bg-green-500"></span>
               </div>
-              <span className="text-xs font-mono text-amber-400 font-bold">RR-Traders Console v1.0</span>
+              <span className="text-xs font-mono text-emerald-400 font-bold">RR-Traders Console v1.0</span>
             </div>
 
             <div className="grid grid-cols-2 gap-4 mb-4">
               <div className="bg-gray-950 border border-gray-800 p-4 rounded-xl">
-                <h4 className="text-2xl font-extrabold text-white">1,250</h4>
-                <p className="text-xs text-gray-500 mt-1">Total Members</p>
+                <h4 className="text-2xl font-extrabold text-white">{platformStats.totalMembers}</h4>
+                <p className="text-xs text-gray-500 mt-1">Verified Members</p>
               </div>
               <div className="bg-gray-950 border border-gray-800 p-4 rounded-xl">
-                <h4 className="text-2xl font-extrabold text-green-400">₹2.4L</h4>
+                <h4 className="text-2xl font-extrabold text-green-400 font-mono">
+                  ₹{platformStats.monthlyRevenue.toLocaleString()}
+                </h4>
                 <p className="text-xs text-gray-500 mt-1">Monthly MRR</p>
               </div>
             </div>
 
             <div className="space-y-3">
               {[
-                'Intraday Momentum: NIFTY 24800 CE Target HIT 🚀',
-                'Alice Smith activated Pro Trader Desk',
-                'Devendra (Admin) published Pre-Market Levels',
-                'VIP Signal: BANKNIFTY 52000 PE +85 Pts locked',
+                `NSE/BSE: ${marketStatus.statusText} (${marketStatus.istTimeString})`,
+                `Schedule: ${marketStatus.timingLabel}`,
+                'Live Paper Trading Terminal: Stocks & Options (F&O)',
+                'Automated Telegram VIP Channel Onboarding',
               ].map((item, i) => (
                 <div key={i} className="flex items-center gap-3 bg-gray-950/80 border border-gray-800/50 p-3 rounded-xl">
-                  <span className="w-2 h-2 rounded-full bg-emerald-400 shrink-0 animate-pulse"></span>
+                  <span className={`w-2 h-2 rounded-full ${marketStatus.isOpen ? 'bg-emerald-400 animate-pulse' : 'bg-amber-400'} shrink-0`}></span>
                   <span className="text-xs text-gray-300 font-mono">{item}</span>
                 </div>
               ))}

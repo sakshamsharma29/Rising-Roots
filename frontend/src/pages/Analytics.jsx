@@ -53,7 +53,9 @@ function Analytics() {
 
         <div className="bg-gray-900 border border-gray-800 p-6 rounded-2xl">
           <p className="text-sm font-medium text-gray-400">Avg Revenue Per User</p>
-          <h3 className="text-3xl font-extrabold text-blue-400 mt-2">₹1,920</h3>
+          <h3 className="text-3xl font-extrabold text-blue-400 mt-2 font-mono">
+            ₹{data.activeSubscribers > 0 ? Math.round(data.mrr / data.activeSubscribers).toLocaleString() : '0'}
+          </h3>
         </div>
       </div>
 

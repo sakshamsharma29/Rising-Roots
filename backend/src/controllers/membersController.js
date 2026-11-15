@@ -138,16 +138,72 @@ export const getStats = async (req, res) => {
     const active = await Member.countDocuments({ status: /^Active$/i });
     const expired = await Member.countDocuments({ status: /^Expired$/i });
 
+    const activeList = await Member.find({ status: /^Active$/i });
+    const planPriceMap = {
+      'pro trader': 2499,
+      'vip signals': 4999,
+      'vip signals & mentorship': 4999,
+      'community pass': 999,
+      'starter community pass': 999,
+      'starter desk': 999,
+    };
+
+    const monthlyRevenue = activeList.reduce((sum, m) => {
+      const p = (m.plan || '').toLowerCase();
+      for (const [key, val] of Object.entries(planPriceMap)) {
+        if (p.includes(key)) return sum + val;
+      }
+      return sum + 2499;
+    }, 0);
+
+    const renewalRate = total > 0 ? `${Math.round((active / total) * 100)}%` : '100%';
+
     res.json({
       success: true,
       data: {
         totalMembers: total,
         activeMembers: active,
         expiredMembers: expired,
-        monthlyRevenue: 240000,
-        renewalRate: '98%',
+        monthlyRevenue,
+        renewalRate,
       },
     });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+export const getActivities = async (req, res) => {
+  try {
+    const recentMembers = await Member.find().sort({ createdAt: -1 }).limit(4);
+    const Trade = (await import('../models/Trade.js')).default;
+    const recentTrades = await Trade.find().sort({ createdAt: -1 }).limit(4);
+
+    const activities = [];
+
+    recentMembers.forEach((m) => {
+      activities.push({
+        id: 'mem_' + m._id,
+        text: `Subscriber ${m.name} active on ${m.plan || 'Pro Trader Desk'}`,
+        time: m.createdAt ? new Date(m.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'Recently',
+        type: 'join',
+        timestamp: m.createdAt || new Date(),
+      });
+    });
+
+    recentTrades.forEach((t) => {
+      activities.push({
+        id: 'trd_' + t._id,
+        text: `Real trade: ${t.tradeType.toUpperCase()} ${t.quantity}x ${t.symbol} @ ₹${t.entryPrice}${t.exitPrice ? ` (Squared off: ₹${t.exitPrice})` : ''}`,
+        time: t.createdAt ? new Date(t.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'Recently',
+        type: t.exitPrice ? 'payment' : 'upgrade',
+        timestamp: t.createdAt || new Date(),
+      });
+    });
+
+    activities.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+
+    res.json({ success: true, data: activities.slice(0, 6) });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }
