@@ -13,7 +13,7 @@ function Members({ searchTerm, showAddModal, onCloseAddModal }) {
   const [newPlan, setNewPlan] = useState('Pro Trader');
 
   const query = searchTerm !== undefined ? searchTerm : localSearch;
-  const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+  const API_URL = import.meta.env.VITE_API_URL || (import.meta.env.DEV ? 'http://localhost:5000' : '');
   const token = localStorage.getItem('rr_token');
 
   const headers = {
