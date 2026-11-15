@@ -14,6 +14,7 @@ import TradeJournal from './pages/TradeJournal';
 import Portfolio from './pages/Portfolio';
 import AiAssistant from './pages/AiAssistant';
 import TradingTerminal from './pages/TradingTerminal';
+import OptionChain from './pages/OptionChain';
 import Sidebar from './components/Sidebar';
 import Header from './components/Header';
 
@@ -56,6 +57,7 @@ function ProtectedLayout() {
                 }
               />
               <Route path="/terminal" element={<TradingTerminal />} />
+              <Route path="/options" element={<OptionChain />} />
               <Route path="/trades" element={<TradeJournal searchTerm={searchTerm} />} />
               <Route path="/portfolio" element={<Portfolio />} />
               <Route path="/ai" element={<AiAssistant />} />
@@ -70,6 +72,7 @@ function ProtectedLayout() {
             <Routes>
               <Route path="/" element={<UserPortal />} />
               <Route path="/terminal" element={<TradingTerminal />} />
+              <Route path="/options" element={<OptionChain />} />
               <Route path="/trades" element={<TradeJournal searchTerm={searchTerm} />} />
               <Route path="/portfolio" element={<Portfolio />} />
               <Route path="/ai" element={<AiAssistant />} />

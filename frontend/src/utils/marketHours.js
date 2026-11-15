@@ -1,108 +1,107 @@
 /**
- * Indian Market Hours Utility (NSE & BSE)
+ * Global Market Hours Utility for Crypto & Forex
  * 
  * Rules:
- * - Trading Days: Monday to Friday (Saturday & Sunday are closed)
- * - Timezone: Indian Standard Time (IST - UTC+5:30)
- * - Regular Trading Session: 09:15 AM to 03:30 PM IST (09:15 - 15:30)
- * - Closing Session: 03:30 PM to 03:40 PM IST (15:30 - 15:40)
- * - Pre-Market Session: 09:00 AM to 09:15 AM IST (09:00 - 09:15)
- * - After Market (AMO): When market is closed (weekends & outside 09:15-15:40)
+ * - Crypto Market: Trades 24/7/365 without interruption. Always LIVE.
+ * - Forex Market: Trades 24 hours a day, 5 days a week.
+ *   - Opens: Sunday 22:00 UTC (5:00 PM EST / Sydney Open)
+ *   - Closes: Friday 22:00 UTC (5:00 PM EST / New York Close)
+ *   - Major Sessions (UTC):
+ *     - Sydney: 21:00 - 06:00 UTC
+ *     - Tokyo: 00:00 - 09:00 UTC
+ *     - London: 08:00 - 17:00 UTC
+ *     - New York: 13:00 - 22:00 UTC
  */
 
-export function getIndianMarketStatus() {
+export function getGlobalMarketStatus() {
   const now = new Date();
 
-  // Convert to Indian Standard Time (IST)
-  const utcMillis = now.getTime() + (now.getTimezoneOffset() * 60000);
-  const istTime = new Date(utcMillis + (3600000 * 5.5));
+  // UTC calculations
+  const utcDay = now.getUTCDay(); // 0 = Sunday, 1 = Monday, ..., 6 = Saturday
+  const utcHours = now.getUTCHours();
+  const utcMinutes = now.getUTCMinutes();
+  const totalUtcMinutes = utcHours * 60 + utcMinutes;
 
-  const dayOfWeek = istTime.getDay(); // 0 = Sunday, 1 = Monday, ..., 6 = Saturday
-  const hours = istTime.getHours();
-  const minutes = istTime.getMinutes();
-  const totalMinutes = hours * 60 + minutes;
+  // Forex is closed from Friday 22:00 UTC to Sunday 22:00 UTC
+  let isForexOpen = true;
+  let forexSessionLabel = 'Global Trading';
 
-  // Minutes from midnight IST:
-  // 09:00 AM = 540 min
-  // 09:15 AM = 555 min
-  // 03:30 PM = 930 min (15:30)
-  // 03:40 PM = 940 min (15:40)
+  if (utcDay === 6) {
+    // Saturday: all day closed
+    isForexOpen = false;
+    forexSessionLabel = 'Weekend Closed';
+  } else if (utcDay === 5 && totalUtcMinutes >= 1320) {
+    // Friday after 22:00 UTC (1320 mins)
+    isForexOpen = false;
+    forexSessionLabel = 'Weekend Closed';
+  } else if (utcDay === 0 && totalUtcMinutes < 1320) {
+    // Sunday before 22:00 UTC
+    isForexOpen = false;
+    forexSessionLabel = 'Weekend Closed';
+  }
 
-  const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
-  const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-  const currentDayName = dayNames[dayOfWeek];
+  // Active Sessions detection
+  const activeSessions = [];
+  if (isForexOpen) {
+    // London: 08:00 - 17:00 UTC (480 - 1020)
+    if (totalUtcMinutes >= 480 && totalUtcMinutes < 1020) activeSessions.push('London');
+    // New York: 13:00 - 22:00 UTC (780 - 1320)
+    if (totalUtcMinutes >= 780 && totalUtcMinutes < 1320) activeSessions.push('New York');
+    // Tokyo: 00:00 - 09:00 UTC (0 - 540)
+    if (totalUtcMinutes >= 0 && totalUtcMinutes < 540) activeSessions.push('Tokyo');
+    // Sydney: 21:00 - 06:00 UTC (1260 - 1440 or 0 - 360)
+    if (totalUtcMinutes >= 1260 || totalUtcMinutes < 360) activeSessions.push('Sydney');
 
-  let isOpen = false;
-  let session = 'closed'; // 'live' | 'closing' | 'pre-open' | 'weekend' | 'post-market'
-  let statusText = 'MARKET CLOSED';
-  let badgeClass = 'bg-rose-500/10 text-rose-400 border-rose-500/30';
-  let dotClass = 'bg-rose-500';
-  let bannerMessage = '';
-  let timingLabel = 'Mon – Fri, 09:15 AM – 03:40 PM IST';
-
-  if (isWeekend) {
-    isOpen = false;
-    session = 'weekend';
-    statusText = `MARKET CLOSED (${currentDayName.toUpperCase()})`;
-    badgeClass = 'bg-amber-500/10 text-amber-400 border-amber-500/30';
-    dotClass = 'bg-amber-400';
-    bannerMessage = `${currentDayName} Weekend • NSE & BSE are closed. Trading resumes Monday at 09:15 AM IST.`;
-  } else if (totalMinutes >= 555 && totalMinutes < 930) {
-    // 09:15 AM to 03:30 PM
-    isOpen = true;
-    session = 'live';
-    statusText = 'NSE/BSE LIVE';
-    badgeClass = 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30';
-    dotClass = 'bg-emerald-400 animate-ping';
-    bannerMessage = 'Live Trading Session Active (09:15 AM - 03:30 PM IST). Real-time ticks active.';
-  } else if (totalMinutes >= 930 && totalMinutes < 940) {
-    // 03:30 PM to 03:40 PM
-    isOpen = false;
-    session = 'closing';
-    statusText = 'CLOSING SESSION';
-    badgeClass = 'bg-amber-500/10 text-amber-400 border-amber-500/30';
-    dotClass = 'bg-amber-400 animate-pulse';
-    bannerMessage = 'Market Closing Session (03:30 - 03:40 PM IST). Post-market VWAP calculation.';
-  } else if (totalMinutes >= 540 && totalMinutes < 555) {
-    // 09:00 AM to 09:15 AM
-    isOpen = false;
-    session = 'pre-open';
-    statusText = 'PRE-MARKET';
-    badgeClass = 'bg-blue-500/10 text-blue-400 border-blue-500/30';
-    dotClass = 'bg-blue-400';
-    bannerMessage = 'Pre-Open Session Active (09:00 - 09:15 AM IST). Order discovery in progress.';
-  } else {
-    // Weekday outside trading hours
-    isOpen = false;
-    session = 'post-market';
-    statusText = 'MARKET CLOSED';
-    badgeClass = 'bg-rose-500/10 text-rose-400 border-rose-500/30';
-    dotClass = 'bg-rose-500';
-    if (totalMinutes < 540) {
-      bannerMessage = 'Pre-Market • Market opens today at 09:15 AM IST.';
-    } else {
-      bannerMessage = 'Post-Market (AMO Open) • Regular trading resumes next market day at 09:15 AM IST.';
+    if (activeSessions.length > 0) {
+      forexSessionLabel = activeSessions.join(' + ') + ' Session';
     }
   }
 
-  // Format IST clock string (e.g. "07:45:20 PM IST")
-  const istTimeString = istTime.toLocaleTimeString('en-IN', {
+  // Clocks
+  const utcTimeString = now.toLocaleTimeString('en-US', {
+    timeZone: 'UTC',
     hour: '2-digit',
     minute: '2-digit',
     second: '2-digit',
     hour12: true,
-  }) + ' IST';
+  }) + ' UTC';
+
+  const localTimeString = now.toLocaleTimeString([], {
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+    hour12: true,
+  });
 
   return {
-    isOpen,
-    session,
-    statusText,
-    badgeClass,
-    dotClass,
-    bannerMessage,
-    timingLabel,
-    istTimeString,
-    currentDayName,
-    isWeekend,
+    crypto: {
+      isOpen: true,
+      statusText: 'CRYPTO 24/7 LIVE',
+      badgeClass: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30',
+      dotClass: 'bg-emerald-400 animate-pulse',
+      schedule: '24 Hours / 7 Days Non-Stop',
+    },
+    forex: {
+      isOpen: isForexOpen,
+      statusText: isForexOpen ? `FOREX LIVE (${forexSessionLabel})` : 'FOREX WEEKEND CLOSED',
+      badgeClass: isForexOpen
+        ? 'bg-blue-500/10 text-blue-400 border-blue-500/30'
+        : 'bg-amber-500/10 text-amber-400 border-amber-500/30',
+      dotClass: isForexOpen ? 'bg-blue-400 animate-pulse' : 'bg-amber-400',
+      activeSessions,
+      sessionLabel: forexSessionLabel,
+      schedule: '24/5 (Sun 22:00 UTC – Fri 22:00 UTC)',
+    },
+    utcTimeString,
+    localTimeString,
+    // Top-level helpers for backward compatibility
+    isOpen: true, // Crypto is always open
+    statusText: isForexOpen ? `CRYPTO & FOREX LIVE • ${forexSessionLabel}` : 'CRYPTO 24/7 LIVE • FOREX WEEKEND',
+    badgeClass: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30',
+    dotClass: 'bg-emerald-400 animate-pulse',
+    timingLabel: 'Crypto: 24/7 | Forex: 24/5 UTC',
   };
 }
+
+// Backwards compatibility alias
+export const getIndianMarketStatus = getGlobalMarketStatus;

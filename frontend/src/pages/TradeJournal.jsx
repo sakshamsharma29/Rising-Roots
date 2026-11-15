@@ -175,10 +175,10 @@ function TradeJournal({ searchTerm }) {
   };
 
   const formatCurrency = (val) => {
-    if (val === undefined || val === null) return '₹0.00';
+    if (val === undefined || val === null) return '$0.00';
     const isNeg = val < 0;
-    const absVal = Math.abs(val).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-    return `${isNeg ? '-' : ''}₹${absVal}`;
+    const absVal = Math.abs(val).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    return `${isNeg ? '-' : ''}$${absVal}`;
   };
 
   return (
@@ -301,10 +301,11 @@ function TradeJournal({ searchTerm }) {
             className="bg-gray-950 border border-gray-800 text-white text-xs rounded-xl px-3 py-2 focus:outline-none"
           >
             <option value="all">All Asset Types</option>
-            <option value="equity">Equity (Stocks)</option>
             <option value="crypto">Crypto</option>
+            <option value="forex">Forex</option>
             <option value="options">Options</option>
             <option value="futures">Futures</option>
+            <option value="equity">Equity (Stocks)</option>
           </select>
         </div>
 
@@ -315,7 +316,7 @@ function TradeJournal({ searchTerm }) {
           </svg>
           <input
             type="text"
-            placeholder="Search by Symbol (e.g. RELIANCE)"
+            placeholder="Search by Symbol (e.g. BTC, EUR/USD)"
             value={searchSymbol}
             onChange={(e) => setSearchSymbol(e.target.value)}
             className="bg-transparent text-xs text-white focus:outline-none w-full placeholder-gray-500 uppercase"
@@ -334,7 +335,7 @@ function TradeJournal({ searchTerm }) {
                 <th className="py-3.5 px-4 font-semibold">Entry Price</th>
                 <th className="py-3.5 px-4 font-semibold">Exit Price</th>
                 <th className="py-3.5 px-4 font-semibold">Qty</th>
-                <th className="py-3.5 px-4 font-semibold">P&L (₹ / %)</th>
+                <th className="py-3.5 px-4 font-semibold">P&L ($ / %)</th>
                 <th className="py-3.5 px-4 font-semibold">Status</th>
                 <th className="py-3.5 px-4 font-semibold text-right">Actions</th>
               </tr>
@@ -502,10 +503,11 @@ function TradeJournal({ searchTerm }) {
                     onChange={(e) => setFormAssetType(e.target.value)}
                     className="w-full bg-gray-950 border border-gray-800 text-white rounded-xl px-3 py-2 text-sm focus:outline-none"
                   >
-                    <option value="equity">Equity (Stocks)</option>
                     <option value="crypto">Crypto</option>
+                    <option value="forex">Forex</option>
                     <option value="options">Options</option>
                     <option value="futures">Futures</option>
+                    <option value="equity">Equity (Stocks)</option>
                   </select>
                 </div>
               </div>
@@ -526,7 +528,7 @@ function TradeJournal({ searchTerm }) {
 
                 {/* Entry Price */}
                 <div>
-                  <label className="block text-xs font-semibold text-gray-400 mb-1">Entry Price (₹) *</label>
+                  <label className="block text-xs font-semibold text-gray-400 mb-1">Entry Price ($) *</label>
                   <input
                     type="number"
                     step="any"

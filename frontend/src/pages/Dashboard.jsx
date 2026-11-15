@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { getIndianMarketStatus } from '../utils/marketHours';
+import { Link } from 'react-router-dom';
+import { getGlobalMarketStatus } from '../utils/marketHours';
 
 function Dashboard({ onOpenAddMember }) {
   const [stats, setStats] = useState({
@@ -15,11 +16,11 @@ function Dashboard({ onOpenAddMember }) {
   const [announcementText, setAnnouncementText] = useState('');
   const [broadcastSent, setBroadcastSent] = useState(false);
 
-  // Market status
-  const [marketStatus, setMarketStatus] = useState(getIndianMarketStatus());
+  // Global Market status (24/7 Crypto + 24/5 Forex)
+  const [marketStatus, setMarketStatus] = useState(getGlobalMarketStatus());
   useEffect(() => {
     const timer = setInterval(() => {
-      setMarketStatus(getIndianMarketStatus());
+      setMarketStatus(getGlobalMarketStatus());
     }, 1000);
     return () => clearInterval(timer);
   }, []);
@@ -85,16 +86,22 @@ function Dashboard({ onOpenAddMember }) {
               ● {marketStatus.statusText}
             </span>
             <span className="text-xs text-gray-400 font-mono">
-              {marketStatus.istTimeString}
+              ({marketStatus.utcTimeString})
             </span>
           </div>
-          <h1 className="text-3xl font-extrabold text-white tracking-tight">Rising Roots Control Center</h1>
+          <h1 className="text-3xl font-extrabold text-white tracking-tight">Crypto & Forex Control Center</h1>
           <p className="text-gray-400 text-sm mt-1">
-            Verified trading community management and institutional options desk.
+            24/7 crypto option chains, global forex tracking, and paper trading risk management.
           </p>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-3">
+          <Link
+            to="/dashboard/options"
+            className="bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 border border-amber-500/30 px-4 py-2.5 rounded-xl text-sm font-bold transition-all cursor-pointer"
+          >
+            📈 Option Chain
+          </Link>
           <button
             onClick={() => setShowBroadcastModal(true)}
             className="bg-gray-800 hover:bg-gray-700 text-white font-medium px-4 py-2.5 rounded-xl text-sm transition-colors border border-gray-700 flex items-center gap-2 cursor-pointer"

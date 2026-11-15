@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import CheckoutModal from '../components/CheckoutModal';
-import { getIndianMarketStatus } from '../utils/marketHours';
+import { getGlobalMarketStatus } from '../utils/marketHours';
 
 function LandingPage() {
   const navigate = useNavigate();
@@ -10,22 +10,56 @@ function LandingPage() {
   const [showJoinModal, setShowJoinModal] = useState(searchParams.get('join') === 'true');
   const [checkoutPlan, setCheckoutPlan] = useState(null);
 
-  // Real Market Status (NSE / BSE IST hours)
-  const [marketStatus, setMarketStatus] = useState(getIndianMarketStatus());
+  // Global Market Status (24/7 Crypto + 24/5 Forex)
+  const [marketStatus, setMarketStatus] = useState(getGlobalMarketStatus());
   useEffect(() => {
     const timer = setInterval(() => {
-      setMarketStatus(getIndianMarketStatus());
+      setMarketStatus(getGlobalMarketStatus());
     }, 1000);
     return () => clearInterval(timer);
   }, []);
 
+  // Live Top Tickers for Marquee
+  const [tickerPrices, setTickerPrices] = useState({
+    BTC: { price: 64520, change: 1.76 },
+    ETH: { price: 2655, change: 1.85 },
+    SOL: { price: 154.8, change: -1.53 },
+    EURUSD: { price: 1.0845, change: 0.17 },
+    GBPUSD: { price: 1.3025, change: -0.18 },
+  });
+
+  useEffect(() => {
+    const fetchTickers = async () => {
+      try {
+        const res = await fetch('https://api.binance.com/api/v3/ticker/24hr');
+        const data = await res.json();
+        if (Array.isArray(data)) {
+          const btc = data.find((d) => d.symbol === 'BTCUSDT');
+          const eth = data.find((d) => d.symbol === 'ETHUSDT');
+          const sol = data.find((d) => d.symbol === 'SOLUSDT');
+          setTickerPrices((prev) => ({
+            ...prev,
+            ...(btc && { BTC: { price: parseFloat(btc.lastPrice), change: parseFloat(btc.priceChangePercent) } }),
+            ...(eth && { ETH: { price: parseFloat(eth.lastPrice), change: parseFloat(eth.priceChangePercent) } }),
+            ...(sol && { SOL: { price: parseFloat(sol.lastPrice), change: parseFloat(sol.priceChangePercent) } }),
+          }));
+        }
+      } catch (e) {}
+    };
+    fetchTickers();
+    const interval = setInterval(fetchTickers, 4000);
+    return () => clearInterval(interval);
+  }, []);
+
   // Real Database Stats
   const [platformStats, setPlatformStats] = useState({
-    totalMembers: 8,
-    activeMembers: 8,
-    monthlyRevenue: 24990,
+    totalMembers: 3,
+    activeMembers: 3,
+    monthlyRevenue: 19497,
     renewalRate: '100%',
   });
+
+  const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 
   useEffect(() => {
     fetch(`${API_URL}/api/stats`)
@@ -45,13 +79,11 @@ function LandingPage() {
   // Join Request Form State
   const [reqName, setReqName] = useState('');
   const [reqEmail, setReqEmail] = useState('');
-  const [reqInviteCode, setReqInviteCode] = useState('RR-ALPHA-2026');
-  const [reqPlan, setReqPlan] = useState('Pro Trader');
+  const [reqInviteCode, setReqInviteCode] = useState('RR-GLOBAL-2026');
+  const [reqPlan, setReqPlan] = useState('Pro Crypto & Forex');
   const [reqMessage, setReqMessage] = useState('');
   const [reqStatus, setReqStatus] = useState(null);
   const [reqLoading, setReqLoading] = useState(false);
-
-  const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 
   const handleSubmitJoinRequest = (e) => {
     e.preventDefault();
@@ -91,19 +123,19 @@ function LandingPage() {
   const roleCards = [
     {
       id: 'admin',
-      title: 'Admin',
+      title: 'Desk Admin',
       badge: 'Full Access',
       icon: '⚡',
       color: 'from-amber-500 to-yellow-400',
-      description: 'Manage trading desk operations, member subscriptions, pricing tiers, and platform revenue.',
+      description: 'Superadmin management for global crypto & forex signals, subscriber tiers, and platform revenue.',
       accessLevel: 'Level 4 — Full Superadmin Control',
       capabilities: [
-        'Member Management (Add, Edit, Delete, Revoke)',
+        'Global Subscriber Management (Add, Edit, Revoke)',
         'Pricing & Subscription Tier Customization',
-        'Revenue MRR & Financial Reporting',
-        'Broadcast Trade Signals to Telegram/Discord',
-        'Webhook & Payment Gateway Configuration',
-        'System Audit Logging & User Roles',
+        'Multi-Currency Financial & MRR Reports',
+        'Broadcast Crypto & Forex Signals to Telegram/Discord',
+        'Option Chain & Liquidation Alert Webhooks',
+        'Audit Logging & API Security Access',
       ],
     },
     {
@@ -112,49 +144,49 @@ function LandingPage() {
       badge: 'Subscriber',
       icon: '📈',
       color: 'from-emerald-500 to-green-400',
-      description: 'Access live options calls, daily market briefings, and VIP Telegram signal channels.',
+      description: 'Access 24/7 crypto option chains, live price feeds, and risk-free $10,000 paper trading desk.',
       accessLevel: 'Level 1 — Member Subscriber',
       capabilities: [
-        'Real-time NIFTY & BANKNIFTY Signal Feed',
-        '1-Click Telegram VIP Channel Invite Link',
-        'Subscription Renewal & Tier Upgrades',
-        'Trade Call Entry, Target & Stoploss Metrics',
-        'Educational Resources & Market Briefings',
+        '24/7 Real-Time Crypto & Forex Price Watchlists',
+        'Interactive BTC & ETH Option Chain with Greeks (Delta/IV)',
+        'Risk-Free $10,000 Virtual Paper Trading Simulator',
+        'Instant Telegram VIP Signal Channel Access',
+        'Put-Call Ratio (PCR) & Max Pain Level Analytics',
         'Personal Subscriber Profile Management',
       ],
     },
     {
       id: 'developer',
-      title: 'Developer',
+      title: 'Quant Developer',
       badge: 'API & Bots',
       icon: '🛠️',
       color: 'from-blue-500 to-cyan-400',
-      description: 'Integrate automated Telegram bots, Stripe/Razorpay webhooks, and REST APIs.',
+      description: 'Integrate automated crypto trading bots, Deribit option feeds, and REST webhooks.',
       accessLevel: 'Level 3 — System Developer',
       capabilities: [
-        'REST API Endpoint Access',
-        'Telegram & Discord Bot Webhook Hooks',
-        'Payment Gateway Webhook Listener Integration',
-        'Automated Access Token Generation',
-        'Custom Webhook Event Logs',
-        'Database Schema & API Documentation',
+        'High-Performance REST API Endpoints',
+        'Telegram & Discord Bot Signal Webhooks',
+        'Binance & Deribit Real-Time Feed Bridges',
+        'Automated JWT Authentication Tokens',
+        'Custom Webhook Event & Error Logs',
+        'MongoDB Schema & Open Endpoints Documentation',
       ],
     },
     {
       id: 'analyst',
-      title: 'Analyst',
-      badge: 'Intelligence',
+      title: 'Market Analyst',
+      badge: 'Research',
       icon: '📊',
       color: 'from-purple-500 to-indigo-400',
-      description: 'Analyze community growth, renewal rates, churn metrics, and revenue trends.',
+      description: 'Analyze option volatility surfaces, open interest distribution, and trader performance.',
       accessLevel: 'Level 2 — Data Analyst',
       capabilities: [
-        'Monthly Recurring Revenue (MRR) Trends',
-        'Subscriber Churn & Retention Analytics',
-        'Trade Signal Win-Rate Performance',
-        'Plan Popularity Breakdown Reports',
+        'Options Max Pain & Open Interest Skew Reports',
+        'Historical Volatility vs Implied Volatility (IV) Curves',
+        'Trade Win-Rate & Risk-to-Reward Ratio Analytics',
+        'Forex Session Liquidity Overlap Reports',
         'Exportable CSV Data Reports',
-        'Historical Analytics Visualizations',
+        'Subscriber Churn & Retention Analytics',
       ],
     },
   ];
@@ -162,8 +194,8 @@ function LandingPage() {
   const teamMembers = [
     {
       name: 'Devendra Singh Rajput',
-      role: 'Admin',
-      bio: 'Overseeing trading desk operations, community growth, and platform strategy for Rising Roots.',
+      role: 'Admin & Lead Trader',
+      bio: 'Overseeing global crypto & forex trading desks, options risk modeling, and community operations.',
       initials: 'DR',
       gradient: 'from-amber-500 to-orange-500',
       github: '#',
@@ -172,8 +204,8 @@ function LandingPage() {
     },
     {
       name: 'Saksham Sharma',
-      role: 'Developer',
-      bio: 'Ships fast, breaks nothing. Building high-performance full-stack architectures and real-time APIs.',
+      role: 'Full-Stack Developer',
+      bio: 'Building real-time low-latency financial systems, Binance/Deribit WebSocket bridges, and scalable APIs.',
       initials: 'SS',
       gradient: 'from-cyan-500 to-blue-500',
       github: '#',
@@ -182,8 +214,8 @@ function LandingPage() {
     },
     {
       name: 'Anil Daksh',
-      role: 'Analyst',
-      bio: 'Market intelligence specialist analyzing trade win-rates, options metrics, and subscriber growth.',
+      role: 'Quantitative Analyst',
+      bio: 'Market volatility specialist focusing on crypto option chains, Black-Scholes Greeks, and algorithmic setups.',
       initials: 'AD',
       gradient: 'from-purple-500 to-indigo-500',
       github: '#',
@@ -194,27 +226,71 @@ function LandingPage() {
 
   return (
     <div className="bg-gray-950 text-white min-h-screen font-sans antialiased">
-      {/* Real-time Indian Market Hours Announcement Top Bar */}
+      {/* Global Market Session Announcement Bar */}
       <div className="bg-gradient-to-r from-gray-900 via-gray-950 to-gray-900 border-b border-gray-800 text-gray-300 py-2.5 px-4 text-center text-xs flex flex-wrap items-center justify-center gap-3 shadow-md relative z-40">
         <span className="flex items-center gap-1.5">
-          <span className={`w-2 h-2 rounded-full ${marketStatus.dotClass}`}></span>
-          <span className="font-extrabold uppercase tracking-wider text-white">
-            {marketStatus.statusText}
+          <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+          <span className="font-extrabold uppercase tracking-wider text-emerald-400">
+            CRYPTO 24/7 LIVE
           </span>
-          <span className="text-gray-400 font-mono">({marketStatus.istTimeString})</span>
           <span className="text-gray-500">•</span>
-          <span className="text-gray-400">{marketStatus.timingLabel}</span>
+          <span className="text-gray-300 font-mono">
+            {marketStatus.forex.statusText}
+          </span>
+          <span className="text-gray-500">•</span>
+          <span className="text-gray-400 font-mono">({marketStatus.utcTimeString})</span>
         </span>
         <span className="hidden md:inline text-gray-600">|</span>
-        <span className="text-emerald-400 font-bold hidden sm:inline">
+        <span className="text-amber-400 font-bold hidden sm:inline">
           Use code ROOTS20 for 20% off
         </span>
-        <Link
-          to="/dashboard/terminal"
-          className="ml-2 bg-emerald-500 hover:bg-emerald-400 text-gray-950 text-[11px] font-black px-3 py-1 rounded-full transition-all cursor-pointer shadow"
-        >
-          Open Trading Terminal →
-        </Link>
+        <div className="flex items-center gap-2">
+          <Link
+            to="/dashboard/options"
+            className="bg-amber-500 hover:bg-amber-400 text-gray-950 text-[11px] font-black px-3 py-1 rounded-full transition-all cursor-pointer shadow"
+          >
+            Option Chain →
+          </Link>
+          <Link
+            to="/dashboard/terminal"
+            className="bg-emerald-500 hover:bg-emerald-400 text-gray-950 text-[11px] font-black px-3 py-1 rounded-full transition-all cursor-pointer shadow"
+          >
+            Terminal & Paper Desk →
+          </Link>
+        </div>
+      </div>
+
+      {/* Live Ticker Tape Marquee */}
+      <div className="bg-gray-900/60 border-b border-gray-800/80 px-4 py-2 overflow-x-auto text-xs font-mono flex items-center justify-center gap-8 text-gray-300">
+        <div className="flex items-center gap-2">
+          <span className="font-bold text-white">BTC/USDT</span>
+          <span className="text-emerald-400 font-bold">${tickerPrices.BTC.price.toLocaleString()}</span>
+          <span className={`text-[10px] ${tickerPrices.BTC.change >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
+            ({tickerPrices.BTC.change >= 0 ? '+' : ''}{tickerPrices.BTC.change}%)
+          </span>
+        </div>
+        <div className="flex items-center gap-2">
+          <span className="font-bold text-white">ETH/USDT</span>
+          <span className="text-emerald-400 font-bold">${tickerPrices.ETH.price.toLocaleString()}</span>
+          <span className={`text-[10px] ${tickerPrices.ETH.change >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
+            ({tickerPrices.ETH.change >= 0 ? '+' : ''}{tickerPrices.ETH.change}%)
+          </span>
+        </div>
+        <div className="flex items-center gap-2">
+          <span className="font-bold text-white">SOL/USDT</span>
+          <span className="text-emerald-400 font-bold">${tickerPrices.SOL.price}</span>
+          <span className={`text-[10px] ${tickerPrices.SOL.change >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
+            ({tickerPrices.SOL.change >= 0 ? '+' : ''}{tickerPrices.SOL.change}%)
+          </span>
+        </div>
+        <div className="flex items-center gap-2">
+          <span className="font-bold text-white">EUR/USD</span>
+          <span className="text-blue-400 font-bold">${tickerPrices.EURUSD.price}</span>
+        </div>
+        <div className="flex items-center gap-2">
+          <span className="font-bold text-white">GBP/USD</span>
+          <span className="text-blue-400 font-bold">${tickerPrices.GBPUSD.price}</span>
+        </div>
       </div>
 
       {/* Navbar */}
@@ -225,11 +301,17 @@ function LandingPage() {
           </div>
           <div>
             <span className="text-xl font-bold tracking-tight">Rising Roots</span>
-            <span className="text-xs text-green-400 font-medium block -mt-1">RR-Traders</span>
+            <span className="text-xs text-green-400 font-medium block -mt-1">Crypto & Forex Intelligence</span>
           </div>
         </div>
 
         <div className="hidden md:flex items-center gap-8 text-sm text-gray-400">
+          <Link to="/dashboard/options" className="hover:text-amber-400 transition-colors font-bold text-white flex items-center gap-1">
+            <span>📈</span> Option Chain
+          </Link>
+          <Link to="/dashboard/terminal" className="hover:text-emerald-400 transition-colors font-bold text-white flex items-center gap-1">
+            <span>⚡</span> Paper Terminal
+          </Link>
           <a href="#roles" className="hover:text-white transition-colors">Roles</a>
           <a href="#features" className="hover:text-white transition-colors">Features</a>
           <a href="#pricing" className="hover:text-white transition-colors">Pricing</a>
@@ -256,60 +338,54 @@ function LandingPage() {
       <section className="px-8 lg:px-20 py-16 lg:py-24 flex flex-col lg:flex-row items-center gap-16">
         <div className="flex-1 space-y-6">
           <span className="inline-block px-4 py-1.5 rounded-full bg-emerald-500/10 text-emerald-400 text-xs font-bold border border-emerald-500/20">
-            ⚡ High-Conviction Options Trading & Community Desk — RR-Traders
+            ⚡ 24/7 Crypto Markets & Global Forex Intelligence — RR-Traders
           </span>
 
           <h1 className="text-4xl lg:text-6xl font-extrabold leading-tight tracking-tight">
-            Manage Your Trading Desk
-            <span className="text-green-400"> Without The Chaos</span>
+            Next-Gen Forex & Crypto
+            <span className="text-green-400"> Option Chain Analytics</span>
           </h1>
 
           <p className="text-gray-400 text-lg max-w-xl leading-relaxed">
-            A full-stack CRM and management system built specifically for signal-trading businesses. Track members, subscription expiries, and revenue in real-time.
+            Institutional-grade live market feeds for Bitcoin, Ethereum, and major currency pairs. Analyze real-time option chains, Greeks (Delta/IV), and Max Pain levels with a risk-free $10,000 paper trading desk.
           </p>
 
           <div className="flex flex-wrap items-center gap-4">
-            <button
-              onClick={() =>
-                setCheckoutPlan({
-                  id: 'pro',
-                  name: 'Pro Trader Desk',
-                  price: '₹2,499',
-                })
-              }
-              className="bg-green-500 hover:bg-green-400 text-gray-950 font-black px-8 py-3.5 rounded-xl text-sm transition-all shadow-lg shadow-green-500/20 cursor-pointer flex items-center gap-2"
+            <Link
+              to="/dashboard/options"
+              className="bg-amber-500 hover:bg-amber-400 text-gray-950 font-black px-8 py-3.5 rounded-xl text-sm transition-all shadow-lg shadow-amber-500/20 cursor-pointer flex items-center gap-2"
             >
-              <span>🚀</span> Get Pro Desk Access
-            </button>
-            <button
-              onClick={() => setShowJoinModal(true)}
-              className="border border-gray-700 hover:border-gray-600 text-white font-medium px-8 py-3.5 rounded-xl text-sm transition-colors cursor-pointer"
+              <span>📊</span> View Live Option Chain
+            </Link>
+            <Link
+              to="/dashboard/terminal"
+              className="border border-emerald-500/40 hover:bg-emerald-500/10 text-emerald-400 font-bold px-8 py-3.5 rounded-xl text-sm transition-colors cursor-pointer flex items-center gap-2"
             >
-              Request to Join Team
-            </button>
+              <span>⚡</span> Open Paper Terminal ($10k Demo)
+            </Link>
           </div>
 
           <div className="flex items-center gap-6 pt-4">
             <div>
-              <h3 className="text-3xl font-extrabold text-white">{platformStats.activeMembers}</h3>
-              <span className="text-xs text-gray-500 font-medium">Active Subscribers</span>
+              <h3 className="text-3xl font-extrabold text-white">24/7</h3>
+              <span className="text-xs text-gray-500 font-medium">Non-Stop Crypto</span>
             </div>
             <div className="h-10 w-px bg-gray-800"></div>
             <div>
-              <h3 className="text-3xl font-extrabold text-green-400 font-mono">
-                ₹{platformStats.monthlyRevenue.toLocaleString()}
+              <h3 className="text-3xl font-extrabold text-amber-400 font-mono">
+                BTC & ETH
               </h3>
-              <span className="text-xs text-gray-500 font-medium">Monthly MRR</span>
+              <span className="text-xs text-gray-500 font-medium">Option Chains</span>
             </div>
             <div className="h-10 w-px bg-gray-800"></div>
             <div>
-              <h3 className="text-3xl font-extrabold text-emerald-400">{platformStats.renewalRate}</h3>
-              <span className="text-xs text-gray-500 font-medium">Renewal Rate</span>
+              <h3 className="text-3xl font-extrabold text-emerald-400">$10,000</h3>
+              <span className="text-xs text-gray-500 font-medium">Free Paper Margin</span>
             </div>
           </div>
         </div>
 
-        {/* Dashboard Preview */}
+        {/* Dashboard Preview Widget */}
         <div className="flex-1 max-w-lg w-full">
           <div className="bg-gray-900 border border-gray-800 rounded-2xl p-6 shadow-2xl shadow-black/60 relative overflow-hidden">
             <div className="flex items-center justify-between mb-6 border-b border-gray-800 pb-4">
@@ -318,31 +394,31 @@ function LandingPage() {
                 <span className="w-3 h-3 rounded-full bg-amber-500"></span>
                 <span className="w-3 h-3 rounded-full bg-green-500"></span>
               </div>
-              <span className="text-xs font-mono text-emerald-400 font-bold">RR-Traders Console v1.0</span>
+              <span className="text-xs font-mono text-emerald-400 font-bold">RR-CryptoDesk v2.0</span>
             </div>
 
             <div className="grid grid-cols-2 gap-4 mb-4">
               <div className="bg-gray-950 border border-gray-800 p-4 rounded-xl">
-                <h4 className="text-2xl font-extrabold text-white">{platformStats.totalMembers}</h4>
-                <p className="text-xs text-gray-500 mt-1">Verified Members</p>
+                <span className="text-xs text-gray-500 block">Bitcoin Live Spot</span>
+                <h4 className="text-2xl font-extrabold text-white font-mono mt-1">${tickerPrices.BTC.price.toLocaleString()}</h4>
+                <p className="text-[11px] text-emerald-400 mt-1">● 24/7 Live Stream</p>
               </div>
               <div className="bg-gray-950 border border-gray-800 p-4 rounded-xl">
-                <h4 className="text-2xl font-extrabold text-green-400 font-mono">
-                  ₹{platformStats.monthlyRevenue.toLocaleString()}
-                </h4>
-                <p className="text-xs text-gray-500 mt-1">Monthly MRR</p>
+                <span className="text-xs text-gray-500 block">Option PCR Ratio</span>
+                <h4 className="text-2xl font-extrabold text-amber-400 font-mono mt-1">0.86</h4>
+                <p className="text-[11px] text-gray-400 mt-1">Max Pain: $64,000</p>
               </div>
             </div>
 
             <div className="space-y-3">
               {[
-                `NSE/BSE: ${marketStatus.statusText} (${marketStatus.istTimeString})`,
-                `Schedule: ${marketStatus.timingLabel}`,
-                'Live Paper Trading Terminal: Stocks & Options (F&O)',
-                'Automated Telegram VIP Channel Onboarding',
+                'Deribit & Binance Live Options Surface',
+                'Global Forex Sessions (London, NY, Tokyo)',
+                'Risk-Free $10,000 Paper Trading Simulator',
+                'Telegram VIP Signal Dispatcher',
               ].map((item, i) => (
                 <div key={i} className="flex items-center gap-3 bg-gray-950/80 border border-gray-800/50 p-3 rounded-xl">
-                  <span className={`w-2 h-2 rounded-full ${marketStatus.isOpen ? 'bg-emerald-400 animate-pulse' : 'bg-amber-400'} shrink-0`}></span>
+                  <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse shrink-0"></span>
                   <span className="text-xs text-gray-300 font-mono">{item}</span>
                 </div>
               ))}
@@ -396,43 +472,43 @@ function LandingPage() {
       <section id="features" className="px-8 lg:px-20 py-20 border-t border-gray-900 bg-gray-950">
         <div className="text-center mb-16">
           <span className="text-xs font-semibold text-amber-400 uppercase tracking-widest">Platform Features</span>
-          <h2 className="text-3xl lg:text-4xl font-extrabold text-white mt-3">Engineered for High-Performance Trading Desks</h2>
+          <h2 className="text-3xl lg:text-4xl font-extrabold text-white mt-3">Engineered for Crypto & Forex Desks</h2>
           <p className="text-gray-400 mt-3 max-w-2xl mx-auto text-sm">
-            Everything you need to automate subscriptions, broadcast high-conviction trades, and protect community revenue.
+            Real-time volatility analysis, automated paper orders, and VIP member community tools.
           </p>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-6xl mx-auto">
           {[
             {
-              icon: '🤖',
-              title: 'Automated Telegram Sync',
-              desc: 'Auto-generates single-use invite links for paying members. Instantly flags and revokes access when plans expire.',
+              icon: '📈',
+              title: 'BTC & ETH Option Chain',
+              desc: 'Deribit-style option chain showing strikes, daily/weekly/monthly expiries, LTP, IV, Delta, Open Interest, and Put-Call Ratio.',
             },
             {
-              icon: '📡',
-              title: 'Multi-Channel Trade Broadcasts',
-              desc: 'Send options scalping alerts (Entry, Target 1, Target 2, Stop-Loss) across Telegram and web portals in milliseconds.',
+              icon: '⚡',
+              title: '24/7 Live Crypto Feeds',
+              desc: 'Instant streaming prices for Bitcoin, Ethereum, Solana, and major altcoins powered by public Binance ticker APIs.',
             },
             {
-              icon: '💳',
-              title: 'Instant UPI & Card Checkouts',
-              desc: 'Integrated checkout flows with automatic coupon codes, instant payment verification, and webhook listeners.',
-            },
-            {
-              icon: '📊',
-              title: 'MRR & Renewal Intelligence',
-              desc: 'Real-time financial analytics tracking monthly recurring revenue, subscriber churn rates, and renewal pipelines.',
+              icon: '🌍',
+              title: 'Global Forex 24/5 Sessions',
+              desc: 'Continuous tracking of London, New York, Tokyo, and Sydney liquidity sessions for EUR/USD, GBP/USD, USD/JPY, and more.',
             },
             {
               icon: '🛡️',
-              title: 'Multi-Tenant Desk Control',
-              desc: 'Support for multiple private trading teams, desk codes, join request approvals, and role permissions.',
+              title: '$10,000 Paper Trading Simulator',
+              desc: 'Test options scalping and spot strategies with zero financial risk. Track floating P&L in real-time and square off positions.',
             },
             {
-              icon: '📈',
-              title: 'Trade Journal & Analytics',
-              desc: 'Comprehensive logging for equity and F&O calls with automated P&L calculations and win-rate performance tracking.',
+              icon: '🤖',
+              title: 'Automated Telegram Dispatch',
+              desc: 'Broadcast high-conviction trade setups directly to private VIP Telegram groups with automated member invite management.',
+            },
+            {
+              icon: '📊',
+              title: 'Real-Time Portfolio Journal',
+              desc: 'Track open and closed paper trades, win rates, risk-reward ratios, and member retention in MongoDB.',
             },
           ].map((f, i) => (
             <div key={i} className="bg-gray-900 border border-gray-800 rounded-2xl p-6 hover:border-gray-700 transition-all space-y-3">
@@ -446,18 +522,17 @@ function LandingPage() {
 
       {/* Pricing Section */}
       <section id="pricing" className="px-8 lg:px-20 py-24 border-t border-gray-900 bg-gradient-to-b from-gray-950 via-gray-900 to-gray-950 relative overflow-hidden">
-        {/* Ambient Emerald Glow */}
         <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-96 h-96 bg-green-500/10 rounded-full blur-3xl pointer-events-none"></div>
 
         <div className="text-center mb-16 relative z-10">
           <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-gradient-to-r from-green-500/10 via-emerald-400/20 to-green-500/10 border border-green-500/30 text-green-300 text-xs font-bold uppercase tracking-widest mb-3">
-            <span>⚡</span> Institutional & Retail Trading Plans
+            <span>⚡</span> Global Crypto & Forex Access Tiers
           </div>
           <h2 className="text-3xl lg:text-5xl font-extrabold text-white tracking-tight">
-            Invest in Your Trading Future with <span className="text-green-400">Precision Signals</span>
+            Invest in Your Trading Future with <span className="text-green-400">Institutional Tools</span>
           </h2>
           <p className="text-gray-400 mt-3 max-w-2xl mx-auto text-sm leading-relaxed">
-            Instant automated Telegram access, verified options calls, and risk-managed trading strategies. Apply coupon <span className="text-green-400 font-mono font-bold">ROOTS20</span> at checkout for 20% off!
+            Full Option Chain analysis, real-time crypto & forex prices, and risk-free paper trading. Use promo code <span className="text-green-400 font-mono font-bold">ROOTS20</span> for 20% off!
           </p>
         </div>
 
@@ -467,18 +542,18 @@ function LandingPage() {
             <div>
               <div className="flex items-center justify-between mb-4">
                 <span className="text-xs font-bold px-3 py-1 rounded-full bg-gray-800 text-gray-300 border border-gray-700">
-                  Community Pass
+                  Starter Pass
                 </span>
-                <span className="text-xs text-gray-500 font-mono">268 Active</span>
+                <span className="text-xs text-gray-500 font-mono">Popular with learners</span>
               </div>
-              <h3 className="text-2xl font-bold text-white">Starter Desk</h3>
-              <p className="text-xs text-gray-400 mt-1 mb-6">Ideal for beginner traders learning market structure.</p>
+              <h3 className="text-2xl font-bold text-white">Crypto & Forex Starter</h3>
+              <p className="text-xs text-gray-400 mt-1 mb-6">Live streaming tickers, basic option chain, and $10,000 paper trading.</p>
 
               <div className="mb-6">
                 <div className="flex items-baseline gap-2">
-                  <span className="text-3xl font-extrabold text-white">₹799</span>
-                  <span className="text-sm text-gray-500 line-through">₹999</span>
-                  <span className="text-xs text-gray-400">/month</span>
+                  <span className="text-4xl font-extrabold text-white">$29</span>
+                  <span className="text-sm text-gray-500 line-through">$39</span>
+                  <span className="text-xs text-gray-400">/month (₹2,499)</span>
                 </div>
                 <span className="text-[11px] text-green-400 font-semibold block mt-1">
                   Save 20% with code ROOTS20
@@ -487,10 +562,10 @@ function LandingPage() {
 
               <div className="space-y-3 pt-6 border-t border-gray-800 text-xs text-gray-300">
                 {[
-                  'Daily Market Briefings & Key Levels',
-                  'Discord Community Chatroom Access',
-                  'Basic Options Educational Material',
-                  'Weekly Q&A Market Review',
+                  '24/7 Live Crypto & Forex Streaming Feeds',
+                  'Basic BTC & ETH Option Chain Viewer',
+                  '$10,000 Risk-Free Paper Trading Simulator',
+                  'Community Discord Discussion Access',
                 ].map((item, i) => (
                   <div key={i} className="flex items-center gap-3">
                     <span className="text-green-400 font-bold">✓</span>
@@ -504,13 +579,13 @@ function LandingPage() {
               onClick={() =>
                 setCheckoutPlan({
                   id: 'starter',
-                  name: 'Starter Community Pass',
-                  price: '₹999',
+                  name: 'Crypto & Forex Starter',
+                  price: '$29',
                 })
               }
               className="mt-8 w-full bg-gray-800 hover:bg-gray-700 text-white font-bold py-3.5 rounded-xl text-xs transition-colors border border-gray-700 cursor-pointer"
             >
-              Claim Starter Access
+              Get Started ($29/mo)
             </button>
           </div>
 
@@ -525,16 +600,16 @@ function LandingPage() {
                 <span className="text-xs font-bold px-3 py-1 rounded-full bg-green-500/10 text-green-400 border border-green-500/20">
                   Pro Trader Desk
                 </span>
-                <span className="text-xs text-green-400 font-mono font-bold">620 Active</span>
+                <span className="text-xs text-green-400 font-mono font-bold">Recommended</span>
               </div>
-              <h3 className="text-2xl font-extrabold text-white">Full Signals Desk</h3>
-              <p className="text-xs text-gray-400 mt-1 mb-6">Designed for active NIFTY & BANKNIFTY options scalpers.</p>
+              <h3 className="text-2xl font-extrabold text-white">Full Signals & Option Desk</h3>
+              <p className="text-xs text-gray-400 mt-1 mb-6">Designed for active crypto & forex traders and options scalpers.</p>
 
               <div className="mb-6">
                 <div className="flex items-baseline gap-2">
-                  <span className="text-4xl font-black text-green-400">₹1,999</span>
-                  <span className="text-sm text-gray-500 line-through">₹2,499</span>
-                  <span className="text-xs text-gray-400">/month</span>
+                  <span className="text-4xl font-black text-green-400">$79</span>
+                  <span className="text-sm text-gray-500 line-through">$99</span>
+                  <span className="text-xs text-gray-400">/month (₹6,499)</span>
                 </div>
                 <span className="text-[11px] text-green-400 font-semibold block mt-1">
                   ✓ 20% Discount with code ROOTS20
@@ -543,11 +618,11 @@ function LandingPage() {
 
               <div className="space-y-3 pt-6 border-t border-gray-800 text-xs text-gray-200">
                 {[
-                  'Live NIFTY & BANKNIFTY Real-time Signals',
-                  'Instant 1-Click Telegram VIP Channel Invite',
-                  'Target 1, Target 2, and Trailing Stop-Loss alerts',
-                  'Live Audio Commentary on Expiry Days',
-                  'Priority Desk Support',
+                  'Full Deribit-Style Option Chain with Greeks (Delta/IV)',
+                  'Put-Call Ratio (PCR) & Max Pain Strike Analytics',
+                  'Instant 1-Click Telegram VIP Signal Channel Access',
+                  'Advanced Paper Trading with Square-Off & SL/TP',
+                  'Priority Trading Desk Support',
                 ].map((item, i) => (
                   <div key={i} className="flex items-center gap-3">
                     <span className="text-green-400 font-bold">✓</span>
@@ -561,33 +636,33 @@ function LandingPage() {
               onClick={() =>
                 setCheckoutPlan({
                   id: 'pro',
-                  name: 'Pro Trader Desk',
-                  price: '₹2,499',
+                  name: 'Pro Trader Desk (Forex & Crypto)',
+                  price: '$79',
                 })
               }
               className="mt-8 w-full bg-gradient-to-r from-emerald-500 to-green-400 hover:from-emerald-400 hover:to-green-300 text-gray-950 font-black py-4 rounded-xl text-sm transition-all shadow-lg shadow-green-500/30 cursor-pointer"
             >
-              Claim Pro Desk Access →
+              Claim Pro Desk Access ($79/mo) →
             </button>
           </div>
 
-          {/* VIP Mentorship */}
+          {/* Institutional / VIP Desk */}
           <div className="bg-gray-900/90 border border-gray-800 rounded-3xl p-8 flex flex-col justify-between hover:border-gray-700 transition-all">
             <div>
               <div className="flex items-center justify-between mb-4">
                 <span className="text-xs font-bold px-3 py-1 rounded-full bg-purple-500/10 text-purple-400 border border-purple-500/20">
-                  VIP Mentorship
+                  Institutional Desk
                 </span>
-                <span className="text-xs text-gray-500 font-mono">362 Active</span>
+                <span className="text-xs text-gray-500 font-mono">1-on-1 Mentorship</span>
               </div>
-              <h3 className="text-2xl font-bold text-white">Elite Desk + 1-on-1</h3>
-              <p className="text-xs text-gray-400 mt-1 mb-6">Complete handholding with professional proprietary desk mentors.</p>
+              <h3 className="text-2xl font-bold text-white">Institutional VIP Desk</h3>
+              <p className="text-xs text-gray-400 mt-1 mb-6">Complete quantitative mentoring and multi-exchange order flow analytics.</p>
 
               <div className="mb-6">
                 <div className="flex items-baseline gap-2">
-                  <span className="text-3xl font-extrabold text-white">₹3,999</span>
-                  <span className="text-sm text-gray-500 line-through">₹4,999</span>
-                  <span className="text-xs text-gray-400">/month</span>
+                  <span className="text-4xl font-extrabold text-white">$199</span>
+                  <span className="text-sm text-gray-500 line-through">$249</span>
+                  <span className="text-xs text-gray-400">/month (₹15,999)</span>
                 </div>
                 <span className="text-[11px] text-purple-400 font-semibold block mt-1">
                   Save 20% with code ROOTS20
@@ -597,10 +672,10 @@ function LandingPage() {
               <div className="space-y-3 pt-6 border-t border-gray-800 text-xs text-gray-300">
                 {[
                   'Everything in Pro Trader Desk included',
-                  '1-on-1 Weekly Zoom Mentorship with Senior Analyst',
-                  'Algo Trading Setup & Risk Hedging Blueprint',
-                  'Private Direct WhatsApp Desk Access',
-                  'Quarterly Portfolio Optimization',
+                  '1-on-1 Weekly Zoom Mentorship with Senior Desk Quant',
+                  'Custom Algo Trading Setup & Risk Hedging Blueprint',
+                  'Private Direct Desk Access (WhatsApp / Telegram VIP)',
+                  'Multi-Exchange Order Flow & Liquidation Heatmaps',
                 ].map((item, i) => (
                   <div key={i} className="flex items-center gap-3">
                     <span className="text-purple-400 font-bold">✓</span>
@@ -614,13 +689,13 @@ function LandingPage() {
               onClick={() =>
                 setCheckoutPlan({
                   id: 'vip',
-                  name: 'VIP Signals & Mentorship',
-                  price: '₹4,999',
+                  name: 'Institutional VIP Desk',
+                  price: '$199',
                 })
               }
               className="mt-8 w-full bg-purple-600 hover:bg-purple-500 text-white font-bold py-3.5 rounded-xl text-xs transition-colors cursor-pointer shadow-lg shadow-purple-600/20"
             >
-              Claim VIP Mentorship
+              Claim VIP Mentorship ($199/mo)
             </button>
           </div>
         </div>
@@ -631,7 +706,7 @@ function LandingPage() {
         <div className="text-center mb-16">
           <span className="text-xs font-semibold text-green-400 uppercase tracking-widest">Behind Rising Roots</span>
           <h2 className="text-3xl lg:text-4xl font-extrabold text-white mt-3">Meet the Team</h2>
-          <p className="text-gray-400 mt-3 text-sm">The leaders, developers, and analysts behind RR-Traders.</p>
+          <p className="text-gray-400 mt-3 text-sm">The quants, developers, and analysts behind RR-Traders.</p>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-5xl mx-auto">
@@ -690,7 +765,7 @@ function LandingPage() {
             </div>
 
             <div>
-              <h4 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">6 Core Capabilities Checklist</h4>
+              <h4 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">Core Capabilities</h4>
               <ul className="space-y-2.5">
                 {selectedRole.capabilities.map((cap, i) => (
                   <li key={i} className="flex items-center gap-3 text-sm text-gray-200 bg-gray-950 p-2.5 rounded-xl border border-gray-800/80">
@@ -728,9 +803,9 @@ function LandingPage() {
             <div className="p-6 border-b border-gray-800 flex items-center justify-between">
               <div>
                 <h3 className="text-xl font-bold text-white flex items-center gap-2">
-                  <span>📩</span> Request to Join Trading Team
+                  <span>📩</span> Request to Join Trading Desk
                 </h3>
-                <p className="text-xs text-gray-400 mt-1">Submit your request to join a community trading desk.</p>
+                <p className="text-xs text-gray-400 mt-1">Submit your request to join our private crypto & forex desks.</p>
               </div>
               <button
                 onClick={() => {
@@ -762,7 +837,7 @@ function LandingPage() {
                   <input
                     type="text"
                     required
-                    placeholder="Rahul Sharma"
+                    placeholder="Alex Mercer"
                     value={reqName}
                     onChange={(e) => setReqName(e.target.value)}
                     className="w-full bg-gray-950 border border-gray-800 text-white rounded-xl px-3 py-2 text-sm focus:outline-none"
@@ -773,7 +848,7 @@ function LandingPage() {
                   <input
                     type="email"
                     required
-                    placeholder="rahul@example.com"
+                    placeholder="alex@example.com"
                     value={reqEmail}
                     onChange={(e) => setReqEmail(e.target.value)}
                     className="w-full bg-gray-950 border border-gray-800 text-white rounded-xl px-3 py-2 text-sm focus:outline-none"
@@ -783,10 +858,10 @@ function LandingPage() {
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs font-semibold text-gray-400 mb-1">Team Invite Code</label>
+                  <label className="block text-xs font-semibold text-gray-400 mb-1">Invite Code</label>
                   <input
                     type="text"
-                    placeholder="RR-ALPHA-2026"
+                    placeholder="RR-GLOBAL-2026"
                     value={reqInviteCode}
                     onChange={(e) => setReqInviteCode(e.target.value)}
                     className="w-full bg-gray-950 border border-gray-800 text-white rounded-xl px-3 py-2 text-sm focus:outline-none uppercase font-mono text-green-400 font-bold"
@@ -799,18 +874,18 @@ function LandingPage() {
                     onChange={(e) => setReqPlan(e.target.value)}
                     className="w-full bg-gray-950 border border-gray-800 text-white rounded-xl px-3 py-2 text-sm focus:outline-none"
                   >
-                    <option value="Pro Trader">Pro Trader (₹2,499/mo)</option>
-                    <option value="VIP Signals & Mentorship">VIP Signals (₹4,999/mo)</option>
-                    <option value="Community Pass">Community Pass (₹999/mo)</option>
+                    <option value="Pro Crypto & Forex">Pro Trader ($79/mo)</option>
+                    <option value="Institutional VIP Desk">Institutional VIP ($199/mo)</option>
+                    <option value="Crypto Starter">Crypto Starter ($29/mo)</option>
                   </select>
                 </div>
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-gray-400 mb-1">Message to Admin (Optional)</label>
+                <label className="block text-xs font-semibold text-gray-400 mb-1">Message (Optional)</label>
                 <textarea
                   rows="2"
-                  placeholder="I am an options trader looking to join your VIP desk."
+                  placeholder="I trade crypto options and forex and want to join the VIP signal channel."
                   value={reqMessage}
                   onChange={(e) => setReqMessage(e.target.value)}
                   className="w-full bg-gray-950 border border-gray-800 text-white rounded-xl px-3 py-2 text-sm focus:outline-none"
@@ -838,7 +913,7 @@ function LandingPage() {
         </div>
       )}
 
-      {/* 💳 Realistic Checkout Modal */}
+      {/* Realistic Checkout Modal */}
       {checkoutPlan && (
         <CheckoutModal
           plan={checkoutPlan}
@@ -853,13 +928,13 @@ function LandingPage() {
           <div className="w-7 h-7 rounded-lg bg-gradient-to-tr from-green-500 to-emerald-400 flex items-center justify-center text-gray-950 font-black text-xs">
             RR
           </div>
-          <span className="text-sm font-semibold text-gray-400">Rising Roots — RR-Traders</span>
+          <span className="text-sm font-semibold text-gray-400">Rising Roots — Crypto & Forex Trading Intelligence</span>
         </div>
         <p className="text-xs text-gray-600">© 2026 Rising Roots. All rights reserved.</p>
         <div className="flex gap-6 text-xs text-gray-500">
           <a href="#" className="hover:text-white transition-colors">Privacy</a>
           <a href="#" className="hover:text-white transition-colors">Terms</a>
-          <a href="#" className="hover:text-white transition-colors">Contact</a>
+          <a href="#" className="hover:text-white transition-colors">Risk Disclosure</a>
         </div>
       </footer>
     </div>

@@ -7,9 +7,9 @@ const tradeSchema = new mongoose.Schema(
     symbol: { type: String, required: true, uppercase: true, trim: true },
     assetType: {
       type: String,
-      enum: ['equity', 'crypto', 'options', 'futures'],
+      enum: ['crypto', 'forex', 'options', 'futures', 'equity'],
       required: true,
-      default: 'equity',
+      default: 'crypto',
     },
     tradeType: {
       type: String,
@@ -67,7 +67,7 @@ tradeSchema.pre('save', function () {
   if (this.exitPrice !== null && this.exitPrice !== undefined) {
     const isLong = this.tradeType === 'long';
     const priceDiff = isLong ? this.exitPrice - this.entryPrice : this.entryPrice - this.exitPrice;
-    this.pnl = priceDiff * this.quantity;
+    this.pnl = parseFloat((priceDiff * this.quantity).toFixed(2));
     this.pnlPercent = parseFloat(((priceDiff / this.entryPrice) * 100).toFixed(2));
 
     if (this.pnl > 0) this.outcome = 'win';
