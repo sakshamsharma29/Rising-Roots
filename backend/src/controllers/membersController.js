@@ -194,7 +194,7 @@ export const getActivities = async (req, res) => {
     recentTrades.forEach((t) => {
       activities.push({
         id: 'trd_' + t._id,
-        text: `Real trade: ${t.tradeType.toUpperCase()} ${t.quantity}x ${t.symbol} @ ₹${t.entryPrice}${t.exitPrice ? ` (Squared off: ₹${t.exitPrice})` : ''}`,
+        text: `Real trade: ${t.tradeType.toUpperCase()} ${t.quantity}x ${t.symbol} @ $${t.entryPrice}${t.exitPrice ? ` (Squared off: $${t.exitPrice})` : ''}`,
         time: t.createdAt ? new Date(t.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'Recently',
         type: t.exitPrice ? 'payment' : 'upgrade',
         timestamp: t.createdAt || new Date(),

@@ -54,10 +54,10 @@ function Portfolio() {
   }, []);
 
   const formatCurrency = (val) => {
-    if (val === undefined || val === null) return '₹0.00';
+    if (val === undefined || val === null) return '$0.00';
     const isNeg = val < 0;
-    const absVal = Math.abs(val).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-    return `${isNeg ? '-' : ''}₹${absVal}`;
+    const absVal = Math.abs(val).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    return `${isNeg ? '-' : ''}$${absVal}`;
   };
 
   return (

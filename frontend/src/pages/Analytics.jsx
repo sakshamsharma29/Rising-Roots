@@ -36,7 +36,7 @@ function Analytics() {
         <div className="bg-gray-900 border border-gray-800 p-6 rounded-2xl">
           <p className="text-sm font-medium text-gray-400">Monthly Recurring Revenue</p>
           <div className="flex items-baseline gap-2 mt-2">
-            <h3 className="text-3xl font-extrabold text-white">₹{(data.mrr / 100000).toFixed(2)}L</h3>
+            <h3 className="text-3xl font-extrabold text-white font-mono">${(data.mrr || 0).toLocaleString()}</h3>
             <span className="text-xs font-bold text-green-400">{data.mrrGrowth}</span>
           </div>
         </div>
@@ -54,7 +54,7 @@ function Analytics() {
         <div className="bg-gray-900 border border-gray-800 p-6 rounded-2xl">
           <p className="text-sm font-medium text-gray-400">Avg Revenue Per User</p>
           <h3 className="text-3xl font-extrabold text-blue-400 mt-2 font-mono">
-            ₹{data.activeSubscribers > 0 ? Math.round(data.mrr / data.activeSubscribers).toLocaleString() : '0'}
+            ${data.activeSubscribers > 0 ? Math.round(data.mrr / data.activeSubscribers).toLocaleString() : '0'}
           </h3>
         </div>
       </div>
