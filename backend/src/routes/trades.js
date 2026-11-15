@@ -21,5 +21,7 @@ router.get('/:id', getTradeById);
 router.put('/:id', updateTrade);
 router.delete('/:id', deleteTrade);
 router.patch('/:id/close', closeTrade);
+router.post('/:id/close', closeTrade);
+router.put('/:id/close', closeTrade);
 
 export default router;

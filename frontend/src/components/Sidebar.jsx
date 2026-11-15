@@ -11,6 +11,16 @@ const adminNavItems = [
     ),
   },
   {
+    label: 'Trading Terminal',
+    path: '/dashboard/terminal',
+    badge: 'LIVE',
+    icon: (
+      <svg className="w-5 h-5 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
+      </svg>
+    ),
+  },
+  {
     label: 'Trade Journal',
     path: '/dashboard/trades',
     icon: (
@@ -105,6 +115,16 @@ const userNavItems = [
     ),
   },
   {
+    label: 'Trading Terminal',
+    path: '/dashboard/terminal',
+    badge: 'LIVE',
+    icon: (
+      <svg className="w-5 h-5 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
+      </svg>
+    ),
+  },
+  {
     label: 'Trade Journal',
     path: '/dashboard/trades',
     icon: (
@@ -188,14 +208,27 @@ function Sidebar() {
             <Link
               key={item.path}
               to={item.path}
-              className={`px-4 py-3 rounded-xl text-sm font-medium transition-all duration-200 flex items-center gap-3 ${
+              className={`px-4 py-3 rounded-xl text-sm font-medium transition-all duration-200 flex items-center justify-between ${
                 isActive
                   ? 'bg-green-500 text-gray-950 font-semibold shadow-md shadow-green-500/10'
                   : 'text-gray-400 hover:bg-gray-800/60 hover:text-white'
               }`}
             >
-              <span className={isActive ? 'text-gray-950' : 'text-gray-400'}>{item.icon}</span>
-              {item.label}
+              <div className="flex items-center gap-3">
+                <span className={isActive ? 'text-gray-950' : 'text-gray-400'}>{item.icon}</span>
+                <span>{item.label}</span>
+              </div>
+              {item.badge && (
+                <span
+                  className={`text-[9px] font-black px-1.5 py-0.5 rounded-full tracking-wider ${
+                    isActive
+                      ? 'bg-gray-950 text-emerald-400'
+                      : 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
+                  }`}
+                >
+                  {item.badge}
+                </span>
+              )}
             </Link>
           );
         })}

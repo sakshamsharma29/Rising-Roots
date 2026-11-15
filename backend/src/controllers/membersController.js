@@ -1,10 +1,31 @@
 import Member from '../models/Member.js';
+import User from '../models/User.js';
 import Broadcast from '../models/Broadcast.js';
 import { sendBroadcastSignal } from '../services/telegramBot.js';
 
 export const getMembers = async (req, res) => {
   try {
     const { search, status, sort = 'desc' } = req.query;
+
+    // Auto-sync any registered users with role 'user' who are missing from Member collection
+    try {
+      const userList = await User.find({ role: 'user' });
+      for (const u of userList) {
+        const cleanEmail = u.email.toLowerCase().trim();
+        const exists = await Member.findOne({ email: cleanEmail });
+        if (!exists) {
+          await Member.create({
+            name: u.name,
+            email: cleanEmail,
+            plan: 'Pro Trader',
+            status: 'Active',
+            joinedDate: new Date(),
+          });
+        }
+      }
+    } catch (syncErr) {
+      // Non-blocking sync error
+    }
 
     const filter = {};
 
@@ -33,14 +54,15 @@ export const addMember = async (req, res) => {
       return res.status(400).json({ success: false, message: 'Name and email are required.' });
     }
 
-    const existing = await Member.findOne({ email: email.toLowerCase() });
+    const cleanEmail = email.toLowerCase().trim();
+    const existing = await Member.findOne({ email: cleanEmail });
     if (existing) {
       return res.status(400).json({ success: false, message: 'Member with this email already exists.' });
     }
 
     const newMember = await Member.create({
       name,
-      email: email.toLowerCase(),
+      email: cleanEmail,
       plan: plan || 'Pro Trader',
       status: status || 'Active',
       joinedDate: new Date(),
@@ -61,7 +83,7 @@ export const updateMember = async (req, res) => {
       id,
       {
         ...(name && { name }),
-        ...(email && { email: email.toLowerCase() }),
+        ...(email && { email: email.toLowerCase().trim() }),
         ...(plan && { plan }),
         ...(status && { status }),
       },
@@ -100,7 +122,8 @@ export const toggleMemberStatus = async (req, res) => {
       return res.status(404).json({ success: false, message: 'Member not found.' });
     }
 
-    member.status = member.status === 'Active' ? 'Expired' : 'Active';
+    const newStatus = member.status === 'Active' ? 'Expired' : 'Active';
+    member.status = newStatus;
     await member.save();
 
     res.json({ success: true, data: member });
@@ -112,8 +135,8 @@ export const toggleMemberStatus = async (req, res) => {
 export const getStats = async (req, res) => {
   try {
     const total = await Member.countDocuments();
-    const active = await Member.countDocuments({ status: 'Active' });
-    const expired = await Member.countDocuments({ status: 'Expired' });
+    const active = await Member.countDocuments({ status: /^Active$/i });
+    const expired = await Member.countDocuments({ status: /^Expired$/i });
 
     res.json({
       success: true,
@@ -137,10 +160,10 @@ export const broadcastAnnouncement = async (req, res) => {
       return res.status(400).json({ success: false, message: 'Message text is required.' });
     }
 
-    await Broadcast.create({ message });
+    const broadcast = await Broadcast.create({ message });
     await sendBroadcastSignal(message);
 
-    res.json({ success: true, message: 'Broadcast sent successfully.' });
+    res.json({ success: true, message: 'Broadcast sent successfully.', data: broadcast });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }

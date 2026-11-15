@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
+import CheckoutModal from '../components/CheckoutModal';
 
 function LandingPage() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const [selectedRole, setSelectedRole] = useState(null);
   const [showJoinModal, setShowJoinModal] = useState(searchParams.get('join') === 'true');
+  const [checkoutPlan, setCheckoutPlan] = useState(null);
 
   useEffect(() => {
     if (searchParams.get('join') === 'true') {
@@ -165,6 +167,32 @@ function LandingPage() {
 
   return (
     <div className="bg-gray-950 text-white min-h-screen font-sans antialiased">
+      {/* Evergreen Announcement Top Bar */}
+      <div className="bg-gradient-to-r from-emerald-600 via-green-600 to-teal-600 text-gray-950 py-2.5 px-4 text-center font-bold text-xs flex flex-wrap items-center justify-center gap-2 shadow-md relative z-40">
+        <span className="flex items-center gap-1.5">
+          <span className="bg-gray-950 text-emerald-400 font-mono px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-wider">
+            LIVE DESK
+          </span>
+          <span className="font-extrabold uppercase tracking-wider">Algorithmic Signals & Paper Trading Terminal:</span>
+          <span className="font-semibold text-gray-950">Active on NIFTY & BANKNIFTY. Use Coupon:</span>
+          <span className="bg-gray-950 text-emerald-400 font-mono px-2 py-0.5 rounded text-[11px] font-black border border-emerald-400/40">
+            ROOTS20
+          </span>
+        </span>
+        <button
+          onClick={() =>
+            setCheckoutPlan({
+              id: 'pro',
+              name: 'Pro Trader Desk',
+              price: '₹2,499',
+            })
+          }
+          className="ml-2 bg-gray-950 hover:bg-gray-900 text-emerald-400 text-[11px] font-black px-3 py-1 rounded-full border border-emerald-400/40 transition-all cursor-pointer shadow"
+        >
+          Claim Pro Desk →
+        </button>
+      </div>
+
       {/* Navbar */}
       <nav className="flex items-center justify-between px-8 lg:px-20 py-5 border-b border-gray-900 sticky top-0 bg-gray-950/90 backdrop-blur-md z-30">
         <div className="flex items-center gap-3">
@@ -180,8 +208,8 @@ function LandingPage() {
         <div className="hidden md:flex items-center gap-8 text-sm text-gray-400">
           <a href="#roles" className="hover:text-white transition-colors">Roles</a>
           <a href="#features" className="hover:text-white transition-colors">Features</a>
-          <a href="#team" className="hover:text-white transition-colors">Team</a>
           <a href="#pricing" className="hover:text-white transition-colors">Pricing</a>
+          <a href="#team" className="hover:text-white transition-colors">Team</a>
         </div>
 
         <div className="flex items-center gap-3">
@@ -203,8 +231,8 @@ function LandingPage() {
       {/* Hero Section */}
       <section className="px-8 lg:px-20 py-16 lg:py-24 flex flex-col lg:flex-row items-center gap-16">
         <div className="flex-1 space-y-6">
-          <span className="inline-block px-4 py-1.5 rounded-full bg-green-500/10 text-green-400 text-xs font-semibold border border-green-500/20">
-            🚀 Trader Management System — RR-Traders
+          <span className="inline-block px-4 py-1.5 rounded-full bg-emerald-500/10 text-emerald-400 text-xs font-bold border border-emerald-500/20">
+            ⚡ High-Conviction Options Trading & Community Desk — RR-Traders
           </span>
 
           <h1 className="text-4xl lg:text-6xl font-extrabold leading-tight tracking-tight">
@@ -218,14 +246,23 @@ function LandingPage() {
 
           <div className="flex flex-wrap items-center gap-4">
             <button
-              onClick={() => setShowJoinModal(true)}
-              className="bg-green-500 hover:bg-green-400 text-gray-950 font-bold px-8 py-3.5 rounded-xl text-sm transition-all shadow-lg shadow-green-500/20 hover:shadow-green-500/30 flex items-center gap-2 cursor-pointer"
+              onClick={() =>
+                setCheckoutPlan({
+                  id: 'pro',
+                  name: 'Pro Trader Desk',
+                  price: '₹2,499',
+                })
+              }
+              className="bg-green-500 hover:bg-green-400 text-gray-950 font-black px-8 py-3.5 rounded-xl text-sm transition-all shadow-lg shadow-green-500/20 cursor-pointer flex items-center gap-2"
             >
-              <span>📩</span> Request to Join Team
+              <span>🚀</span> Get Pro Desk Access
             </button>
-            <Link to="/login?mode=signup" className="border border-gray-700 hover:border-gray-600 text-white font-medium px-8 py-3.5 rounded-xl text-sm transition-colors">
-              Direct Sign In →
-            </Link>
+            <button
+              onClick={() => setShowJoinModal(true)}
+              className="border border-gray-700 hover:border-gray-600 text-white font-medium px-8 py-3.5 rounded-xl text-sm transition-colors cursor-pointer"
+            >
+              Request to Join Team
+            </button>
           </div>
 
           <div className="flex items-center gap-6 pt-4">
@@ -240,7 +277,7 @@ function LandingPage() {
             </div>
             <div className="h-10 w-px bg-gray-800"></div>
             <div>
-              <h3 className="text-3xl font-extrabold text-blue-400">98%</h3>
+              <h3 className="text-3xl font-extrabold text-amber-400">98%</h3>
               <span className="text-xs text-gray-500 font-medium">Renewal Rate</span>
             </div>
           </div>
@@ -255,7 +292,7 @@ function LandingPage() {
                 <span className="w-3 h-3 rounded-full bg-amber-500"></span>
                 <span className="w-3 h-3 rounded-full bg-green-500"></span>
               </div>
-              <span className="text-xs font-mono text-gray-400">RR-Traders Console v1.0</span>
+              <span className="text-xs font-mono text-amber-400 font-bold">RR-Traders Console v1.0</span>
             </div>
 
             <div className="grid grid-cols-2 gap-4 mb-4">
@@ -270,9 +307,14 @@ function LandingPage() {
             </div>
 
             <div className="space-y-3">
-              {['Devendra (Admin) logged in', 'Alice Smith renewed Pro Plan', 'NIFTY 24500 CE signal sent'].map((item, i) => (
+              {[
+                'Intraday Momentum: NIFTY 24800 CE Target HIT 🚀',
+                'Alice Smith activated Pro Trader Desk',
+                'Devendra (Admin) published Pre-Market Levels',
+                'VIP Signal: BANKNIFTY 52000 PE +85 Pts locked',
+              ].map((item, i) => (
                 <div key={i} className="flex items-center gap-3 bg-gray-950/80 border border-gray-800/50 p-3 rounded-xl">
-                  <span className="w-2 h-2 rounded-full bg-green-400 shrink-0"></span>
+                  <span className="w-2 h-2 rounded-full bg-emerald-400 shrink-0 animate-pulse"></span>
                   <span className="text-xs text-gray-300 font-mono">{item}</span>
                 </div>
               ))}
@@ -286,7 +328,7 @@ function LandingPage() {
         <div className="text-center mb-16">
           <span className="text-xs font-semibold text-green-400 uppercase tracking-widest">Platform Access Roles</span>
           <h2 className="text-3xl lg:text-4xl font-extrabold text-white mt-3">Tailored Experiences for Every Team Member</h2>
-          <p className="text-gray-400 mt-3 max-w-2xl mx-auto">Click any role card below to view its specific capabilities and access level details.</p>
+          <p className="text-gray-400 mt-3 max-w-2xl mx-auto text-sm">Click any role card below to view its specific capabilities and access level details.</p>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -322,12 +364,246 @@ function LandingPage() {
         </div>
       </section>
 
+      {/* Features Section */}
+      <section id="features" className="px-8 lg:px-20 py-20 border-t border-gray-900 bg-gray-950">
+        <div className="text-center mb-16">
+          <span className="text-xs font-semibold text-amber-400 uppercase tracking-widest">Platform Features</span>
+          <h2 className="text-3xl lg:text-4xl font-extrabold text-white mt-3">Engineered for High-Performance Trading Desks</h2>
+          <p className="text-gray-400 mt-3 max-w-2xl mx-auto text-sm">
+            Everything you need to automate subscriptions, broadcast high-conviction trades, and protect community revenue.
+          </p>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-6xl mx-auto">
+          {[
+            {
+              icon: '🤖',
+              title: 'Automated Telegram Sync',
+              desc: 'Auto-generates single-use invite links for paying members. Instantly flags and revokes access when plans expire.',
+            },
+            {
+              icon: '📡',
+              title: 'Multi-Channel Trade Broadcasts',
+              desc: 'Send options scalping alerts (Entry, Target 1, Target 2, Stop-Loss) across Telegram and web portals in milliseconds.',
+            },
+            {
+              icon: '💳',
+              title: 'Instant UPI & Card Checkouts',
+              desc: 'Integrated checkout flows with automatic coupon codes, instant payment verification, and webhook listeners.',
+            },
+            {
+              icon: '📊',
+              title: 'MRR & Renewal Intelligence',
+              desc: 'Real-time financial analytics tracking monthly recurring revenue, subscriber churn rates, and renewal pipelines.',
+            },
+            {
+              icon: '🛡️',
+              title: 'Multi-Tenant Desk Control',
+              desc: 'Support for multiple private trading teams, desk codes, join request approvals, and role permissions.',
+            },
+            {
+              icon: '📈',
+              title: 'Trade Journal & Analytics',
+              desc: 'Comprehensive logging for equity and F&O calls with automated P&L calculations and win-rate performance tracking.',
+            },
+          ].map((f, i) => (
+            <div key={i} className="bg-gray-900 border border-gray-800 rounded-2xl p-6 hover:border-gray-700 transition-all space-y-3">
+              <div className="text-3xl">{f.icon}</div>
+              <h3 className="text-lg font-bold text-white">{f.title}</h3>
+              <p className="text-xs text-gray-400 leading-relaxed">{f.desc}</p>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* Pricing Section */}
+      <section id="pricing" className="px-8 lg:px-20 py-24 border-t border-gray-900 bg-gradient-to-b from-gray-950 via-gray-900 to-gray-950 relative overflow-hidden">
+        {/* Ambient Emerald Glow */}
+        <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-96 h-96 bg-green-500/10 rounded-full blur-3xl pointer-events-none"></div>
+
+        <div className="text-center mb-16 relative z-10">
+          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-gradient-to-r from-green-500/10 via-emerald-400/20 to-green-500/10 border border-green-500/30 text-green-300 text-xs font-bold uppercase tracking-widest mb-3">
+            <span>⚡</span> Institutional & Retail Trading Plans
+          </div>
+          <h2 className="text-3xl lg:text-5xl font-extrabold text-white tracking-tight">
+            Invest in Your Trading Future with <span className="text-green-400">Precision Signals</span>
+          </h2>
+          <p className="text-gray-400 mt-3 max-w-2xl mx-auto text-sm leading-relaxed">
+            Instant automated Telegram access, verified options calls, and risk-managed trading strategies. Apply coupon <span className="text-green-400 font-mono font-bold">ROOTS20</span> at checkout for 20% off!
+          </p>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-6xl mx-auto relative z-10">
+          {/* Starter Plan */}
+          <div className="bg-gray-900/90 border border-gray-800 rounded-3xl p-8 flex flex-col justify-between hover:border-gray-700 transition-all">
+            <div>
+              <div className="flex items-center justify-between mb-4">
+                <span className="text-xs font-bold px-3 py-1 rounded-full bg-gray-800 text-gray-300 border border-gray-700">
+                  Community Pass
+                </span>
+                <span className="text-xs text-gray-500 font-mono">268 Active</span>
+              </div>
+              <h3 className="text-2xl font-bold text-white">Starter Desk</h3>
+              <p className="text-xs text-gray-400 mt-1 mb-6">Ideal for beginner traders learning market structure.</p>
+
+              <div className="mb-6">
+                <div className="flex items-baseline gap-2">
+                  <span className="text-3xl font-extrabold text-white">₹799</span>
+                  <span className="text-sm text-gray-500 line-through">₹999</span>
+                  <span className="text-xs text-gray-400">/month</span>
+                </div>
+                <span className="text-[11px] text-green-400 font-semibold block mt-1">
+                  Save 20% with code ROOTS20
+                </span>
+              </div>
+
+              <div className="space-y-3 pt-6 border-t border-gray-800 text-xs text-gray-300">
+                {[
+                  'Daily Market Briefings & Key Levels',
+                  'Discord Community Chatroom Access',
+                  'Basic Options Educational Material',
+                  'Weekly Q&A Market Review',
+                ].map((item, i) => (
+                  <div key={i} className="flex items-center gap-3">
+                    <span className="text-green-400 font-bold">✓</span>
+                    <span>{item}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <button
+              onClick={() =>
+                setCheckoutPlan({
+                  id: 'starter',
+                  name: 'Starter Community Pass',
+                  price: '₹999',
+                })
+              }
+              className="mt-8 w-full bg-gray-800 hover:bg-gray-700 text-white font-bold py-3.5 rounded-xl text-xs transition-colors border border-gray-700 cursor-pointer"
+            >
+              Claim Starter Access
+            </button>
+          </div>
+
+          {/* Pro Trader - Bestseller */}
+          <div className="bg-gradient-to-b from-gray-900 via-gray-900 to-gray-950 border-2 border-green-500/50 rounded-3xl p-8 flex flex-col justify-between shadow-2xl shadow-green-500/10 relative transform lg:-translate-y-2">
+            <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 bg-gradient-to-r from-emerald-500 to-green-400 text-gray-950 font-black text-[11px] px-4 py-1 rounded-full uppercase tracking-wider shadow-md">
+              ⭐ Most Popular • Active Desks
+            </div>
+
+            <div>
+              <div className="flex items-center justify-between mb-4 mt-2">
+                <span className="text-xs font-bold px-3 py-1 rounded-full bg-green-500/10 text-green-400 border border-green-500/20">
+                  Pro Trader Desk
+                </span>
+                <span className="text-xs text-green-400 font-mono font-bold">620 Active</span>
+              </div>
+              <h3 className="text-2xl font-extrabold text-white">Full Signals Desk</h3>
+              <p className="text-xs text-gray-400 mt-1 mb-6">Designed for active NIFTY & BANKNIFTY options scalpers.</p>
+
+              <div className="mb-6">
+                <div className="flex items-baseline gap-2">
+                  <span className="text-4xl font-black text-green-400">₹1,999</span>
+                  <span className="text-sm text-gray-500 line-through">₹2,499</span>
+                  <span className="text-xs text-gray-400">/month</span>
+                </div>
+                <span className="text-[11px] text-green-400 font-semibold block mt-1">
+                  ✓ 20% Discount with code ROOTS20
+                </span>
+              </div>
+
+              <div className="space-y-3 pt-6 border-t border-gray-800 text-xs text-gray-200">
+                {[
+                  'Live NIFTY & BANKNIFTY Real-time Signals',
+                  'Instant 1-Click Telegram VIP Channel Invite',
+                  'Target 1, Target 2, and Trailing Stop-Loss alerts',
+                  'Live Audio Commentary on Expiry Days',
+                  'Priority Desk Support',
+                ].map((item, i) => (
+                  <div key={i} className="flex items-center gap-3">
+                    <span className="text-green-400 font-bold">✓</span>
+                    <span>{item}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <button
+              onClick={() =>
+                setCheckoutPlan({
+                  id: 'pro',
+                  name: 'Pro Trader Desk',
+                  price: '₹2,499',
+                })
+              }
+              className="mt-8 w-full bg-gradient-to-r from-emerald-500 to-green-400 hover:from-emerald-400 hover:to-green-300 text-gray-950 font-black py-4 rounded-xl text-sm transition-all shadow-lg shadow-green-500/30 cursor-pointer"
+            >
+              Claim Pro Desk Access →
+            </button>
+          </div>
+
+          {/* VIP Mentorship */}
+          <div className="bg-gray-900/90 border border-gray-800 rounded-3xl p-8 flex flex-col justify-between hover:border-gray-700 transition-all">
+            <div>
+              <div className="flex items-center justify-between mb-4">
+                <span className="text-xs font-bold px-3 py-1 rounded-full bg-purple-500/10 text-purple-400 border border-purple-500/20">
+                  VIP Mentorship
+                </span>
+                <span className="text-xs text-gray-500 font-mono">362 Active</span>
+              </div>
+              <h3 className="text-2xl font-bold text-white">Elite Desk + 1-on-1</h3>
+              <p className="text-xs text-gray-400 mt-1 mb-6">Complete handholding with professional proprietary desk mentors.</p>
+
+              <div className="mb-6">
+                <div className="flex items-baseline gap-2">
+                  <span className="text-3xl font-extrabold text-white">₹3,999</span>
+                  <span className="text-sm text-gray-500 line-through">₹4,999</span>
+                  <span className="text-xs text-gray-400">/month</span>
+                </div>
+                <span className="text-[11px] text-purple-400 font-semibold block mt-1">
+                  Save 20% with code ROOTS20
+                </span>
+              </div>
+
+              <div className="space-y-3 pt-6 border-t border-gray-800 text-xs text-gray-300">
+                {[
+                  'Everything in Pro Trader Desk included',
+                  '1-on-1 Weekly Zoom Mentorship with Senior Analyst',
+                  'Algo Trading Setup & Risk Hedging Blueprint',
+                  'Private Direct WhatsApp Desk Access',
+                  'Quarterly Portfolio Optimization',
+                ].map((item, i) => (
+                  <div key={i} className="flex items-center gap-3">
+                    <span className="text-purple-400 font-bold">✓</span>
+                    <span>{item}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <button
+              onClick={() =>
+                setCheckoutPlan({
+                  id: 'vip',
+                  name: 'VIP Signals & Mentorship',
+                  price: '₹4,999',
+                })
+              }
+              className="mt-8 w-full bg-purple-600 hover:bg-purple-500 text-white font-bold py-3.5 rounded-xl text-xs transition-colors cursor-pointer shadow-lg shadow-purple-600/20"
+            >
+              Claim VIP Mentorship
+            </button>
+          </div>
+        </div>
+      </section>
+
       {/* Team Cards Section */}
       <section id="team" className="px-8 lg:px-20 py-20 border-t border-gray-900 bg-gray-950">
         <div className="text-center mb-16">
           <span className="text-xs font-semibold text-green-400 uppercase tracking-widest">Behind Rising Roots</span>
           <h2 className="text-3xl lg:text-4xl font-extrabold text-white mt-3">Meet the Team</h2>
-          <p className="text-gray-400 mt-3">The leaders, developers, and analysts behind RR-Traders.</p>
+          <p className="text-gray-400 mt-3 text-sm">The leaders, developers, and analysts behind RR-Traders.</p>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-5xl mx-auto">
@@ -532,6 +808,15 @@ function LandingPage() {
             </form>
           </div>
         </div>
+      )}
+
+      {/* 💳 Realistic Checkout Modal */}
+      {checkoutPlan && (
+        <CheckoutModal
+          plan={checkoutPlan}
+          initialPromo="ROOTS20"
+          onClose={() => setCheckoutPlan(null)}
+        />
       )}
 
       {/* Footer */}

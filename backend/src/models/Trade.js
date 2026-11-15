@@ -63,7 +63,7 @@ tradeSchema.virtual('id').get(function () {
 });
 
 // Calculate PnL and outcome before saving if exitPrice is present
-tradeSchema.pre('save', function (next) {
+tradeSchema.pre('save', function () {
   if (this.exitPrice !== null && this.exitPrice !== undefined) {
     const isLong = this.tradeType === 'long';
     const priceDiff = isLong ? this.exitPrice - this.entryPrice : this.entryPrice - this.exitPrice;
@@ -87,8 +87,6 @@ tradeSchema.pre('save', function (next) {
     const reward = Math.abs(this.target - this.entryPrice);
     this.riskRewardRatio = risk > 0 ? parseFloat((reward / risk).toFixed(2)) : null;
   }
-
-  next();
 });
 
 export default mongoose.model('Trade', tradeSchema);
