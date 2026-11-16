@@ -16,6 +16,7 @@ import joinRequestRoutes from './routes/joinRequests.js';
 import { checkAndExpireSubscriptions } from './controllers/subscriptionController.js';
 import User from './models/User.js';
 import Plan from './models/Plan.js';
+import { seedInitialHistoryIfEmpty } from './controllers/historyController.js';
 import bcrypt from 'bcryptjs';
 
 dotenv.config();
@@ -118,6 +119,8 @@ const ensureInitialSetup = async () => {
       ]);
       console.log('✓ Default Crypto & Forex Plans initialized in database');
     }
+
+    await seedInitialHistoryIfEmpty();
   } catch (err) {
     console.error('Warning: Auto-provisioning check skipped:', err.message);
   }

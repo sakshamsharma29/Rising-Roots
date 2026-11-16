@@ -306,6 +306,9 @@ function LandingPage() {
         </div>
 
         <div className="hidden md:flex items-center gap-8 text-sm text-gray-400">
+          <Link to="/history" className="hover:text-emerald-400 transition-colors font-bold text-white flex items-center gap-1.5">
+            <span>🏆</span> Track Record & History
+          </Link>
           <Link to="/dashboard/options" className="hover:text-amber-400 transition-colors font-bold text-white flex items-center gap-1">
             <span>📈</span> Option Chain
           </Link>
@@ -337,9 +340,17 @@ function LandingPage() {
       {/* Hero Section */}
       <section className="px-8 lg:px-20 py-16 lg:py-24 flex flex-col lg:flex-row items-center gap-16">
         <div className="flex-1 space-y-6">
-          <span className="inline-block px-4 py-1.5 rounded-full bg-emerald-500/10 text-emerald-400 text-xs font-bold border border-emerald-500/20">
-            ⚡ 24/7 Crypto Markets & Global Forex Intelligence — RR-Traders
-          </span>
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="inline-block px-4 py-1.5 rounded-full bg-emerald-500/10 text-emerald-400 text-xs font-bold border border-emerald-500/20">
+              ⚡ 24/7 Crypto Markets & Global Forex Intelligence
+            </span>
+            <Link
+              to="/history"
+              className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 text-xs font-bold border border-amber-500/30 transition-all cursor-pointer"
+            >
+              <span>🏆</span> 78.6% Audited Win Rate • View Past Trades →
+            </Link>
+          </div>
 
           <h1 className="text-4xl lg:text-6xl font-extrabold leading-tight tracking-tight">
             Next-Gen Forex & Crypto
@@ -352,16 +363,22 @@ function LandingPage() {
 
           <div className="flex flex-wrap items-center gap-4">
             <Link
-              to="/dashboard/options"
-              className="bg-amber-500 hover:bg-amber-400 text-gray-950 font-black px-8 py-3.5 rounded-xl text-sm transition-all shadow-lg shadow-amber-500/20 cursor-pointer flex items-center gap-2"
+              to="/history"
+              className="bg-emerald-500 hover:bg-emerald-400 text-gray-950 font-black px-7 py-3.5 rounded-xl text-sm transition-all shadow-lg shadow-emerald-500/20 cursor-pointer flex items-center gap-2"
             >
-              <span>📊</span> View Live Option Chain
+              <span>🏆</span> Verified Past Trades (78% Win)
+            </Link>
+            <Link
+              to="/dashboard/options"
+              className="bg-amber-500 hover:bg-amber-400 text-gray-950 font-black px-7 py-3.5 rounded-xl text-sm transition-all shadow-lg shadow-amber-500/20 cursor-pointer flex items-center gap-2"
+            >
+              <span>📊</span> View Option Chain
             </Link>
             <Link
               to="/dashboard/terminal"
-              className="border border-emerald-500/40 hover:bg-emerald-500/10 text-emerald-400 font-bold px-8 py-3.5 rounded-xl text-sm transition-colors cursor-pointer flex items-center gap-2"
+              className="border border-emerald-500/40 hover:bg-emerald-500/10 text-emerald-400 font-bold px-7 py-3.5 rounded-xl text-sm transition-colors cursor-pointer flex items-center gap-2"
             >
-              <span>⚡</span> Open Paper Terminal ($10k Demo)
+              <span>⚡</span> Open Paper Terminal ($10k)
             </Link>
           </div>
 
@@ -379,8 +396,10 @@ function LandingPage() {
             </div>
             <div className="h-10 w-px bg-gray-800"></div>
             <div>
-              <h3 className="text-3xl font-extrabold text-emerald-400">$10,000</h3>
-              <span className="text-xs text-gray-500 font-medium">Free Paper Margin</span>
+              <h3 className="text-3xl font-extrabold text-emerald-400 font-mono">
+                78.6%
+              </h3>
+              <span className="text-xs text-gray-500 font-medium">Audited Win Rate</span>
             </div>
           </div>
         </div>
@@ -932,6 +951,9 @@ function LandingPage() {
         </div>
         <p className="text-xs text-gray-600">© 2026 Rising Roots. All rights reserved.</p>
         <div className="flex gap-6 text-xs text-gray-500">
+          <Link to="/history" className="hover:text-emerald-400 font-bold text-gray-400 transition-colors">
+            🏆 Track Record & History
+          </Link>
           <a href="#" className="hover:text-white transition-colors">Privacy</a>
           <a href="#" className="hover:text-white transition-colors">Terms</a>
           <a href="#" className="hover:text-white transition-colors">Risk Disclosure</a>

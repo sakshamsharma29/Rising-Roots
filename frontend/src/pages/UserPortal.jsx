@@ -124,13 +124,22 @@ function UserPortal() {
           </p>
         </div>
 
-        <Link
-          to="/dashboard/signals"
-          className="bg-gradient-to-r from-emerald-500 to-green-400 hover:from-emerald-400 hover:to-green-300 text-gray-950 font-black px-6 py-3 rounded-2xl text-sm transition-all shadow-lg shadow-emerald-500/20 flex items-center gap-2 shrink-0 cursor-pointer"
-        >
-          <span className="text-base">🔥</span>
-          Enter VIP Signals Room →
-        </Link>
+        <div className="flex flex-wrap items-center gap-3 shrink-0">
+          <Link
+            to="/dashboard/history"
+            className="bg-gray-800 hover:bg-gray-700 text-white font-bold px-4 py-3 rounded-2xl text-xs sm:text-sm transition-all border border-gray-700 flex items-center gap-1.5"
+          >
+            <span>🏆</span> Track Record (78% Win)
+          </Link>
+
+          <Link
+            to="/dashboard/signals"
+            className="bg-gradient-to-r from-emerald-500 to-green-400 hover:from-emerald-400 hover:to-green-300 text-gray-950 font-black px-6 py-3 rounded-2xl text-xs sm:text-sm transition-all shadow-lg shadow-emerald-500/20 flex items-center gap-2 shrink-0 cursor-pointer"
+          >
+            <span className="text-base">🔥</span>
+            Enter VIP Signals Room →
+          </Link>
+        </div>
       </div>
 
       {/* Subscription Status & Demo Wallet Cards */}

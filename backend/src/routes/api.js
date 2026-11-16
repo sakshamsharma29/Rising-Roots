@@ -13,6 +13,12 @@ import {
 } from '../controllers/membersController.js';
 import { getPlans } from '../controllers/plansController.js';
 import { getAnalytics } from '../controllers/analyticsController.js';
+import {
+  getHistoricalTrades,
+  getHistoryStats,
+  addHistoricalTrade,
+  deleteHistoricalTrade,
+} from '../controllers/historyController.js';
 
 const router = express.Router();
 
@@ -34,5 +40,11 @@ router.get('/activities', getActivities);
 // Plans & Analytics endpoints
 router.get('/plans', getPlans);
 router.get('/analytics', getAnalytics);
+
+// Historical Trades & Track Record
+router.get('/history/trades', getHistoricalTrades);
+router.get('/history/stats', getHistoryStats);
+router.post('/history/trades', addHistoricalTrade);
+router.delete('/history/trades/:id', deleteHistoricalTrade);
 
 export default router;
