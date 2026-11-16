@@ -19,6 +19,10 @@ import {
   addHistoricalTrade,
   deleteHistoricalTrade,
 } from '../controllers/historyController.js';
+import {
+  getDeltaTickersHandler,
+  getDeltaOptionsHandler,
+} from '../controllers/deltaController.js';
 
 const router = express.Router();
 
@@ -46,5 +50,9 @@ router.get('/history/trades', getHistoricalTrades);
 router.get('/history/stats', getHistoryStats);
 router.post('/history/trades', addHistoricalTrade);
 router.delete('/history/trades/:id', deleteHistoricalTrade);
+
+// Delta Exchange Public APIs (Institutional Options & Tickers)
+router.get('/delta/tickers', getDeltaTickersHandler);
+router.get('/delta/options', getDeltaOptionsHandler);
 
 export default router;

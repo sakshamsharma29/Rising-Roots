@@ -134,14 +134,61 @@ export default function TradingTerminal() {
     }
   }, [selectedAsset.symbol]);
 
-  // Fetch real-time Crypto tickers from Binance Public API
+  // Fetch real-time Crypto tickers from Delta Exchange API (with Binance fallback)
   useEffect(() => {
+    let isMounted = true;
+
     const fetchCrypto = async () => {
+      // 1. Try Delta Exchange Live Tickers proxy endpoint
+      try {
+        const res = await fetch(`${API_URL}/api/delta/tickers`);
+        const json = await res.json();
+        if (isMounted && json.success && Array.isArray(json.data) && json.data.length > 0) {
+          const map = {};
+          json.data.forEach((item) => {
+            map[item.symbol] = {
+              spot: item.spot,
+              change: item.change,
+              changePct: item.changePct,
+              high: item.high,
+              low: item.low,
+              volume: item.volume,
+            };
+          });
+
+          setCryptoAssets((prev) =>
+            prev.map((asset) => {
+              const live = map[asset.symbol];
+              if (!live) return asset;
+
+              const diff = live.spot - asset.spot;
+              if (diff !== 0) {
+                setTickDirection((td) => ({ ...td, [asset.symbol]: diff > 0 ? 'up' : 'down' }));
+              }
+
+              return {
+                ...asset,
+                spot: live.spot,
+                change: live.change,
+                changePct: live.changePct,
+                high: live.high,
+                low: live.low,
+                volume: live.volume,
+              };
+            })
+          );
+          return;
+        }
+      } catch (err) {
+        // Delta proxy unreachable, fallback to Binance
+      }
+
+      // 2. Binance Public Ticker Fallback
       try {
         const symbols = ['BTCUSDT', 'ETHUSDT', 'SOLUSDT', 'BNBUSDT', 'XRPUSDT', 'DOGEUSDT', 'ADAUSDT', 'AVAXUSDT'];
         const res = await fetch('https://api.binance.com/api/v3/ticker/24hr');
         const data = await res.json();
-        if (Array.isArray(data)) {
+        if (isMounted && Array.isArray(data)) {
           const map = {};
           data.forEach((item) => {
             if (symbols.includes(item.symbol)) {
@@ -185,8 +232,11 @@ export default function TradingTerminal() {
 
     fetchCrypto();
     const interval = setInterval(fetchCrypto, 3500); // Live poll every 3.5s
-    return () => clearInterval(interval);
-  }, []);
+    return () => {
+      isMounted = false;
+      clearInterval(interval);
+    };
+  }, [API_URL]);
 
   // Fetch real-time Forex exchange rates
   useEffect(() => {
@@ -425,7 +475,7 @@ export default function TradingTerminal() {
           </div>
           <div>
             <div className="flex flex-wrap items-center gap-2">
-              <span className="font-extrabold text-sm text-white">CRYPTO 24/7 LIVE</span>
+              <span className="font-extrabold text-sm text-white">DELTA EXCHANGE • 24/7 LIVE FEED</span>
               <span className="text-gray-600">•</span>
               <span className={`text-xs font-mono font-bold px-2 py-0.5 rounded-full border ${marketStatus.forex.badgeClass}`}>
                 {marketStatus.forex.statusText}
@@ -490,7 +540,7 @@ export default function TradingTerminal() {
               ))}
             </div>
 
-            <span className="text-[10px] font-mono text-emerald-400 font-bold">LIVE TICKS</span>
+            <span className="text-[10px] font-mono text-emerald-400 font-bold">DELTA LIVE TICKS</span>
           </div>
 
           {/* Search bar */}

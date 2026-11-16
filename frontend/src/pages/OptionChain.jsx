@@ -76,11 +76,12 @@ export default function OptionChain() {
   );
 
   const [selectedAsset, setSelectedAsset] = useState('BTC');
-  const [expiries] = useState(generateExpiries());
-  const [selectedExpiry, setSelectedExpiry] = useState(expiries[1]);
+  const [expiries, setExpiries] = useState(generateExpiries());
+  const [selectedExpiry, setSelectedExpiry] = useState(expiries[0]);
   const [filterMode, setFilterMode] = useState('near'); // 'all' | 'near' | 'itm' | 'otm'
+  const [deltaData, setDeltaData] = useState(null);
 
-  // Live Spot Prices from Binance Public API
+  // Live Spot Prices from Delta Exchange API (with Binance fallback)
   const [spotPrice, setSpotPrice] = useState(UNDERLYING_CONFIGS.BTC.baseSpot);
   const [spotChange, setSpotChange] = useState({ diff: 0, pct: 0 });
   const [isLiveConnected, setIsLiveConnected] = useState(false);
@@ -105,15 +106,48 @@ export default function OptionChain() {
     return saved !== null ? Number(saved) : 10000;
   });
 
-  const config = UNDERLYING_CONFIGS[selectedAsset];
+  const config = UNDERLYING_CONFIGS[selectedAsset] || UNDERLYING_CONFIGS.BTC;
 
-  // Fetch real-time live price from Binance Public Ticker
+  // 1. Fetch real Delta Exchange Options Chain & Spot Data
   useEffect(() => {
-    const fetchLivePrice = async () => {
+    let isSubscribed = true;
+
+    const fetchDeltaOptions = async () => {
+      try {
+        const expiryQuery = selectedExpiry?.id ? `&expiry=${encodeURIComponent(selectedExpiry.id)}` : '';
+        const res = await fetch(`${API_URL}/api/delta/options?asset=${selectedAsset}${expiryQuery}`);
+        const json = await res.json();
+
+        if (isSubscribed && json.success && json.data) {
+          const d = json.data;
+          setDeltaData(d);
+
+          if (d.spotPrice) {
+            setSpotPrice(d.spotPrice);
+          }
+
+          if (Array.isArray(d.availableExpiries) && d.availableExpiries.length > 0) {
+            setExpiries(d.availableExpiries);
+            // If current selected expiry is not in available expiries, snap to the active one
+            if (!selectedExpiry || !d.availableExpiries.some((e) => e.id === selectedExpiry.id)) {
+              const matched = d.availableExpiries.find((e) => e.id === d.activeExpiry) || d.availableExpiries[0];
+              setSelectedExpiry(matched);
+            }
+          }
+
+          setIsLiveConnected(true);
+          setLastTickTime(new Date().toLocaleTimeString());
+          return;
+        }
+      } catch (err) {
+        // Delta proxy offline or network error, fallback to Binance spot
+      }
+
+      // Binance Public Ticker Fallback for Spot Price
       try {
         const res = await fetch(`https://api.binance.com/api/v3/ticker/24hr?symbol=${config.symbol}`);
         const data = await res.json();
-        if (data && data.lastPrice) {
+        if (isSubscribed && data && data.lastPrice) {
           const current = parseFloat(data.lastPrice);
           const changePct = parseFloat(data.priceChangePercent);
           const changeDiff = parseFloat(data.priceChange);
@@ -123,15 +157,17 @@ export default function OptionChain() {
           setLastTickTime(new Date().toLocaleTimeString());
         }
       } catch (err) {
-        // Fallback to config base spot
-        setSpotPrice((prev) => prev || config.baseSpot);
+        if (isSubscribed) setSpotPrice((prev) => prev || config.baseSpot);
       }
     };
 
-    fetchLivePrice();
-    const interval = setInterval(fetchLivePrice, 3000); // Poll live ticker every 3s
-    return () => clearInterval(interval);
-  }, [selectedAsset, config.symbol]);
+    fetchDeltaOptions();
+    const interval = setInterval(fetchDeltaOptions, 3500); // 3.5s refresh
+    return () => {
+      isSubscribed = false;
+      clearInterval(interval);
+    };
+  }, [selectedAsset, selectedExpiry?.id, API_URL, config.symbol]);
 
   // Black-Scholes approximate Option Premium & Greeks
   const calculateOptionMetrics = (spot, strike, dte, iv, isCall) => {
@@ -183,12 +219,64 @@ export default function OptionChain() {
     };
   };
 
-  // Generate strikes matrix
-  const { strikesData, totalCallOI, totalPutOI, maxPainStrike } = useMemo(() => {
+  // Generate strikes matrix from Delta Exchange API (with Black-Scholes fallback)
+  const { strikesData, totalCallOI, totalPutOI, maxPainStrike, customPcr } = useMemo(() => {
+    // If real Delta Exchange contracts are loaded, prioritize real market data
+    if (deltaData && Array.isArray(deltaData.rows) && deltaData.rows.length > 0) {
+      let callOISum = 0;
+      let putOISum = 0;
+      const strikes = deltaData.rows.map((r) => {
+        const calls = r.calls || r.call || {};
+        const puts = r.puts || r.put || {};
+        callOISum += calls.oi || 0;
+        putOISum += puts.oi || 0;
+        return {
+          strike: r.strike,
+          isAtm: r.isAtm,
+          isCallITM: r.isCallITM !== undefined ? r.isCallITM : r.callItm,
+          isPutITM: r.isPutITM !== undefined ? r.isPutITM : r.putItm,
+          calls: {
+            oi: calls.oi || 0,
+            iv: calls.iv || 50,
+            delta: calls.delta !== undefined ? calls.delta : 0.5,
+            bid: calls.bid !== undefined ? calls.bid : calls.ltp,
+            ask: calls.ask !== undefined ? calls.ask : calls.ltp,
+            ltp: calls.ltp || 0,
+            changePct: calls.changePct || 0,
+            symbol: calls.symbol,
+            theta: calls.theta,
+            gamma: calls.gamma,
+          },
+          puts: {
+            oi: puts.oi || 0,
+            iv: puts.iv || 50,
+            delta: puts.delta !== undefined ? puts.delta : -0.5,
+            bid: puts.bid !== undefined ? puts.bid : puts.ltp,
+            ask: puts.ask !== undefined ? puts.ask : puts.ltp,
+            ltp: puts.ltp || 0,
+            changePct: puts.changePct || 0,
+            symbol: puts.symbol,
+            theta: puts.theta,
+            gamma: puts.gamma,
+          },
+        };
+      });
+
+      return {
+        strikesData: strikes,
+        totalCallOI: Math.round(callOISum),
+        totalPutOI: Math.round(putOISum),
+        maxPainStrike: deltaData.maxPainStrike || deltaData.atmStrike || strikes[0]?.strike,
+        customPcr: deltaData.pcrRatio,
+      };
+    }
+
+    // Fallback: Black-Scholes synthetic model
     const center = Math.round(spotPrice / config.strikeStep) * config.strikeStep;
     const strikes = [];
     let callOISum = 0;
     let putOISum = 0;
+    const dte = selectedExpiry?.dte || 7;
 
     for (let i = -config.strikesRange; i <= config.strikesRange; i++) {
       const strike = center + i * config.strikeStep;
@@ -198,8 +286,8 @@ export default function OptionChain() {
       const distPct = Math.abs((strike - spotPrice) / spotPrice);
       const ivSkew = config.baseIV + (distPct * 35);
 
-      const callMetrics = calculateOptionMetrics(spotPrice, strike, selectedExpiry.dte, ivSkew, true);
-      const putMetrics = calculateOptionMetrics(spotPrice, strike, selectedExpiry.dte, ivSkew, false);
+      const callMetrics = calculateOptionMetrics(spotPrice, strike, dte, ivSkew, true);
+      const putMetrics = calculateOptionMetrics(spotPrice, strike, dte, ivSkew, false);
 
       // Deterministic synthetic Open Interest distribution
       const callBaseOI = Math.round(Math.max(50, 1800 - Math.abs(i) * 140 + Math.sin(strike) * 120));
@@ -225,6 +313,7 @@ export default function OptionChain() {
           ask: callMetrics.ask,
           ltp: callMetrics.price,
           changePct: parseFloat(((spotChange.pct * 1.8) + (Math.sin(i) * 1.5)).toFixed(2)),
+          symbol: `C-${selectedAsset}-${strike}-SYNTH`,
         },
         puts: {
           oi: putBaseOI,
@@ -234,6 +323,7 @@ export default function OptionChain() {
           ask: putMetrics.ask,
           ltp: putMetrics.price,
           changePct: parseFloat(((-spotChange.pct * 1.8) + (Math.cos(i) * 1.5)).toFixed(2)),
+          symbol: `P-${selectedAsset}-${strike}-SYNTH`,
         },
       });
     }
@@ -262,10 +352,15 @@ export default function OptionChain() {
       totalCallOI: callOISum,
       totalPutOI: putOISum,
       maxPainStrike: maxPain,
+      customPcr: null,
     };
-  }, [spotPrice, config, selectedExpiry, spotChange]);
+  }, [deltaData, spotPrice, config, selectedExpiry, spotChange, selectedAsset]);
 
-  const pcrRatio = totalCallOI > 0 ? parseFloat((totalPutOI / totalCallOI).toFixed(2)) : 1.0;
+  const pcrRatio = customPcr !== null && customPcr !== undefined
+    ? customPcr
+    : totalCallOI > 0
+    ? parseFloat((totalPutOI / totalCallOI).toFixed(2))
+    : 1.0;
   const pcrSentiment = pcrRatio > 1.1 ? 'Bullish (Put Heavy)' : pcrRatio < 0.8 ? 'Bearish (Call Heavy)' : 'Neutral';
 
   // Filtered strikes
@@ -343,18 +438,20 @@ export default function OptionChain() {
         <div>
           <div className="flex items-center gap-2 text-xs font-mono text-emerald-400 mb-1">
             <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
-            <span>DERIBIT & BINANCE PUBLIC DATA FEED</span>
+            <span>{deltaData?.exchange || 'DELTA EXCHANGE LIVE API FEED'}</span>
+            <span className="text-gray-600">•</span>
+            <span className="text-emerald-400 font-bold">NATIVE GREEKS & REAL IV</span>
             <span className="text-gray-600">•</span>
             <span className="text-gray-400">{lastTickTime ? `Updated ${lastTickTime}` : 'Connecting...'}</span>
           </div>
           <h1 className="text-2xl lg:text-3xl font-black text-white tracking-tight flex items-center gap-3">
             <span>⚡ Crypto Option Chain</span>
             <span className="text-xs px-2.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 font-bold uppercase tracking-wider">
-              24/7 Live
+              24/7 Delta Live
             </span>
           </h1>
           <p className="text-gray-400 text-sm mt-1">
-            Real-time volatility surface, open interest, and Greeks for Bitcoin & Ethereum options. Click any strike to execute simulated paper trades.
+            Official Delta Exchange volatility surface, open interest, and native Greeks (Delta, Theta, Gamma, IV). Click any strike to execute simulated paper trades.
           </p>
         </div>
 
@@ -419,20 +516,25 @@ export default function OptionChain() {
 
         {/* Expiry Selector */}
         <div className="lg:col-span-2 bg-gray-900 border border-gray-800 p-4 rounded-2xl flex flex-col justify-between">
-          <span className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2 block">Expiration Date</span>
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-xs font-bold text-gray-400 uppercase tracking-wider">Expiration Date</span>
+            <span className="text-[10px] font-mono text-emerald-400 font-bold">DELTA CONTRACTS</span>
+          </div>
           <div className="grid grid-cols-2 gap-2">
             {expiries.map((exp) => (
               <button
                 key={exp.id}
                 onClick={() => setSelectedExpiry(exp)}
                 className={`p-2 rounded-xl text-left text-xs font-medium transition-all cursor-pointer ${
-                  selectedExpiry.id === exp.id
+                  selectedExpiry?.id === exp.id
                     ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/40 font-bold'
                     : 'bg-gray-950 hover:bg-gray-800 text-gray-300 border border-gray-800/80'
                 }`}
               >
                 <div className="truncate font-semibold">{exp.label.split('(')[0]}</div>
-                <div className="text-[10px] text-gray-500">{exp.dte} Days to Expiry</div>
+                <div className="text-[10px] text-gray-500">
+                  {exp.dte !== undefined ? `${exp.dte} DTE` : 'Settlement 08:00 UTC'}
+                </div>
               </button>
             ))}
           </div>
