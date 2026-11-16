@@ -14,6 +14,9 @@ import subscriptionRoutes from './routes/subscriptions.js';
 import orgRoutes from './routes/org.js';
 import joinRequestRoutes from './routes/joinRequests.js';
 import { checkAndExpireSubscriptions } from './controllers/subscriptionController.js';
+import User from './models/User.js';
+import Plan from './models/Plan.js';
+import bcrypt from 'bcryptjs';
 
 dotenv.config();
 
@@ -54,8 +57,75 @@ app.get('*', (req, res, next) => {
   res.sendFile(path.join(distPath, 'index.html'));
 });
 
+// Auto-provision initial Admin and Plans if database is fresh
+const ensureInitialSetup = async () => {
+  try {
+    const adminEmail = 'admin@risingroots.com';
+    const adminExists = await User.findOne({ email: adminEmail });
+    if (!adminExists) {
+      const salt = bcrypt.genSaltSync(10);
+      const hash = bcrypt.hashSync('admin123', salt);
+      await User.create({
+        name: 'Admin Trader',
+        email: adminEmail,
+        passwordHash: hash,
+        role: 'admin',
+      });
+      console.log('✓ Default Admin User created (admin@risingroots.com / admin123)');
+    }
+
+    const planCount = await Plan.countDocuments();
+    if (planCount === 0) {
+      await Plan.create([
+        {
+          _id: 'starter',
+          name: 'Crypto & Forex Starter',
+          price: '$29/mo (₹2,499)',
+          features: [
+            '24/7 Live Crypto & Forex Feeds',
+            'Basic BTC & ETH Option Chain',
+            '$10,000 Paper Trading Simulator',
+            'Community Discord Access',
+          ],
+          status: 'Active',
+        },
+        {
+          _id: 'pro',
+          name: 'Pro Signals & Option Desk',
+          price: '$79/mo (₹6,499)',
+          features: [
+            'Full Option Chain with Greeks (Delta/IV)',
+            'Max Pain & PCR Ratio Analysis',
+            'Telegram VIP Signals Channel',
+            'Advanced Paper Trading with SL/TP',
+            'Priority Desk Support',
+          ],
+          status: 'Active',
+        },
+        {
+          _id: 'vip',
+          name: 'Institutional VIP Desk',
+          price: '$199/mo (₹15,999)',
+          features: [
+            'Everything in Pro included',
+            '1-on-1 Mentorship with Desk Quant',
+            'Custom Algo Trading Blueprints',
+            'Multi-Exchange Order Flow & Heatmaps',
+            'Direct WhatsApp & VIP Telegram',
+          ],
+          status: 'Active',
+        },
+      ]);
+      console.log('✓ Default Crypto & Forex Plans initialized in database');
+    }
+  } catch (err) {
+    console.error('Warning: Auto-provisioning check skipped:', err.message);
+  }
+};
+
 const startServer = async () => {
   await connectDB();
+  await ensureInitialSetup();
 
   // Run initial subscription expiry check & schedule daily check (every 24 hours)
   await checkAndExpireSubscriptions();
