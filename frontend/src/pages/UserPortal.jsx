@@ -124,17 +124,13 @@ function UserPortal() {
           </p>
         </div>
 
-        <a
-          href="https://t.me/+RisingRootsVIP_Official"
-          target="_blank"
-          rel="noopener noreferrer"
-          className="bg-green-500 hover:bg-green-400 text-gray-950 font-bold px-6 py-3 rounded-xl text-sm transition-all shadow-lg shadow-green-500/20 flex items-center gap-2 shrink-0 cursor-pointer"
+        <Link
+          to="/dashboard/signals"
+          className="bg-gradient-to-r from-emerald-500 to-green-400 hover:from-emerald-400 hover:to-green-300 text-gray-950 font-black px-6 py-3 rounded-2xl text-sm transition-all shadow-lg shadow-emerald-500/20 flex items-center gap-2 shrink-0 cursor-pointer"
         >
-          <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm4.64 6.8c-.15 1.58-.8 5.42-1.13 7.19-.14.75-.42 1-.68 1.03-.58.05-1.02-.38-1.58-.75-.88-.58-1.38-.94-2.23-1.5-.99-.65-.35-1.01.22-1.59.15-.15 2.71-2.48 2.76-2.69.01-.03.01-.14-.07-.2-.08-.06-.19-.04-.27-.02-.12.03-1.99 1.27-5.62 3.72-.53.36-1.01.54-1.44.53-.47-.01-1.38-.27-2.05-.49-.83-.27-1.49-.42-1.43-.89.03-.25.38-.51 1.07-.78 4.2-1.83 7-3.04 8.4-3.63 4-.17 4.83.68 4.88 2.27z"/>
-          </svg>
-          Join Telegram VIP Channel
-        </a>
+          <span className="text-base">🔥</span>
+          Enter VIP Signals Room →
+        </Link>
       </div>
 
       {/* Subscription Status & Demo Wallet Cards */}

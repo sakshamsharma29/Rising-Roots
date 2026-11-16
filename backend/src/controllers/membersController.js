@@ -211,15 +211,61 @@ export const getActivities = async (req, res) => {
 
 export const broadcastAnnouncement = async (req, res) => {
   try {
-    const { message } = req.body;
+    const {
+      title,
+      message,
+      category = 'signal',
+      asset = 'BTC/USDT',
+      signalType = 'ALERT',
+      entryPrice,
+      targetPrice,
+      stopLoss,
+      pinned = false,
+    } = req.body;
+
     if (!message) {
       return res.status(400).json({ success: false, message: 'Message text is required.' });
     }
 
-    const broadcast = await Broadcast.create({ message });
-    await sendBroadcastSignal(message);
+    const broadcast = await Broadcast.create({
+      title: title || `${signalType} ${asset}`,
+      message,
+      category,
+      asset,
+      signalType,
+      entryPrice: entryPrice ? Number(entryPrice) : null,
+      targetPrice: targetPrice ? Number(targetPrice) : null,
+      stopLoss: stopLoss ? Number(stopLoss) : null,
+      pinned: Boolean(pinned),
+    });
 
-    res.json({ success: true, message: 'Broadcast sent successfully.', data: broadcast });
+    // Optional Telegram sync if token is configured
+    try {
+      await sendBroadcastSignal(message);
+    } catch (e) {}
+
+    res.json({ success: true, message: 'Broadcast published successfully to VIP room.', data: broadcast });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+export const getBroadcasts = async (req, res) => {
+  try {
+    const broadcasts = await Broadcast.find()
+      .sort({ pinned: -1, createdAt: -1 })
+      .limit(50);
+    res.json({ success: true, count: broadcasts.length, data: broadcasts });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+export const deleteBroadcast = async (req, res) => {
+  try {
+    const { id } = req.params;
+    await Broadcast.findByIdAndDelete(id);
+    res.json({ success: true, message: 'Broadcast deleted successfully.' });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }

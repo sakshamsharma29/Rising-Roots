@@ -97,6 +97,12 @@ function Dashboard({ onOpenAddMember }) {
 
         <div className="flex flex-wrap items-center gap-3">
           <Link
+            to="/dashboard/signals"
+            className="bg-emerald-500 hover:bg-emerald-400 text-gray-950 font-black px-4 py-2.5 rounded-xl text-sm transition-all shadow-md shadow-emerald-500/10 flex items-center gap-1.5 cursor-pointer"
+          >
+            <span>🔥</span> VIP Signals Room
+          </Link>
+          <Link
             to="/dashboard/options"
             className="bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 border border-amber-500/30 px-4 py-2.5 rounded-xl text-sm font-bold transition-all cursor-pointer"
           >
@@ -104,10 +110,10 @@ function Dashboard({ onOpenAddMember }) {
           </Link>
           <button
             onClick={() => setShowBroadcastModal(true)}
-            className="bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 font-bold px-4 py-2.5 rounded-xl text-sm transition-all border border-emerald-500/30 flex items-center gap-2 cursor-pointer shadow-md shadow-emerald-500/5"
+            className="bg-gray-800 hover:bg-gray-700 text-white font-medium px-4 py-2.5 rounded-xl text-sm transition-colors border border-gray-700 flex items-center gap-2 cursor-pointer"
           >
             <span className="text-base">📢</span>
-            Send Broadcast
+            Quick Broadcast
           </button>
           <button
             onClick={onOpenAddMember}

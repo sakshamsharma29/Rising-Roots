@@ -15,6 +15,7 @@ import Portfolio from './pages/Portfolio';
 import AiAssistant from './pages/AiAssistant';
 import TradingTerminal from './pages/TradingTerminal';
 import OptionChain from './pages/OptionChain';
+import VipSignals from './pages/VipSignals';
 import Sidebar from './components/Sidebar';
 import Header from './components/Header';
 
@@ -58,6 +59,7 @@ function ProtectedLayout() {
               />
               <Route path="/terminal" element={<TradingTerminal />} />
               <Route path="/options" element={<OptionChain />} />
+              <Route path="/signals" element={<VipSignals />} />
               <Route path="/trades" element={<TradeJournal searchTerm={searchTerm} />} />
               <Route path="/portfolio" element={<Portfolio />} />
               <Route path="/ai" element={<AiAssistant />} />
@@ -73,6 +75,7 @@ function ProtectedLayout() {
               <Route path="/" element={<UserPortal />} />
               <Route path="/terminal" element={<TradingTerminal />} />
               <Route path="/options" element={<OptionChain />} />
+              <Route path="/signals" element={<VipSignals />} />
               <Route path="/trades" element={<TradeJournal searchTerm={searchTerm} />} />
               <Route path="/portfolio" element={<Portfolio />} />
               <Route path="/ai" element={<AiAssistant />} />

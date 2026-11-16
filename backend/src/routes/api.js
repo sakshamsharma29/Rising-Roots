@@ -8,6 +8,8 @@ import {
   getStats,
   getActivities,
   broadcastAnnouncement,
+  getBroadcasts,
+  deleteBroadcast,
 } from '../controllers/membersController.js';
 import { getPlans } from '../controllers/plansController.js';
 import { getAnalytics } from '../controllers/analyticsController.js';
@@ -24,6 +26,8 @@ router.patch('/members/:id/toggle', toggleMemberStatus);
 
 // Broadcast & Stats
 router.post('/broadcast', broadcastAnnouncement);
+router.get('/broadcasts', getBroadcasts);
+router.delete('/broadcasts/:id', deleteBroadcast);
 router.get('/stats', getStats);
 router.get('/activities', getActivities);
 
