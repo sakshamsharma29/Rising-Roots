@@ -84,6 +84,7 @@ function LandingPage() {
   const [reqMessage, setReqMessage] = useState('');
   const [reqStatus, setReqStatus] = useState(null);
   const [reqLoading, setReqLoading] = useState(false);
+  const [legalModal, setLegalModal] = useState(null); // 'privacy' | 'terms' | 'risk' | null
 
   const handleSubmitJoinRequest = (e) => {
     e.preventDefault();
@@ -954,11 +955,93 @@ function LandingPage() {
           <Link to="/history" className="hover:text-emerald-400 font-bold text-gray-400 transition-colors">
             🏆 Track Record & History
           </Link>
-          <a href="#" className="hover:text-white transition-colors">Privacy</a>
-          <a href="#" className="hover:text-white transition-colors">Terms</a>
-          <a href="#" className="hover:text-white transition-colors">Risk Disclosure</a>
+          <button onClick={() => setLegalModal('privacy')} className="hover:text-white transition-colors cursor-pointer">
+            Privacy Policy
+          </button>
+          <button onClick={() => setLegalModal('terms')} className="hover:text-white transition-colors cursor-pointer">
+            Terms of Service
+          </button>
+          <button onClick={() => setLegalModal('risk')} className="hover:text-amber-400 transition-colors cursor-pointer font-bold">
+            ⚠️ Risk Disclosure
+          </button>
         </div>
       </footer>
+
+      {/* Legal & Compliance Modal */}
+      {legalModal && (
+        <div className="fixed inset-0 bg-black/85 backdrop-blur-md z-50 flex items-center justify-center p-4">
+          <div className="bg-gray-900 border border-gray-800 rounded-3xl max-w-xl w-full p-6 space-y-4 shadow-2xl">
+            <div className="flex items-center justify-between border-b border-gray-800 pb-3">
+              <h3 className="text-lg font-bold text-white flex items-center gap-2">
+                {legalModal === 'risk' && '⚠️ Institutional Risk Disclosure'}
+                {legalModal === 'terms' && '📜 Terms of Service & Membership'}
+                {legalModal === 'privacy' && '🛡️ Privacy Policy & Data Security'}
+              </h3>
+              <button
+                onClick={() => setLegalModal(null)}
+                className="text-gray-400 hover:text-white text-sm cursor-pointer"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="space-y-3 text-xs text-gray-300 leading-relaxed max-h-[60vh] overflow-y-auto pr-2">
+              {legalModal === 'risk' && (
+                <>
+                  <p className="font-bold text-amber-400">
+                    High Risk Investment Warning (Crypto & Forex Derivatives):
+                  </p>
+                  <p>
+                    Trading foreign exchange (Forex), cryptocurrencies, options contracts, and perpetual futures carries a substantial level of risk and may not be suitable for all investors. High degree of leverage can work against you as well as for you. Before deciding to participate in any financial markets, carefully consider your investment objectives, level of experience, and risk appetite.
+                  </p>
+                  <p>
+                    <strong>Educational & Analytical Platform:</strong> Rising Roots operates strictly as a quantitative analytics tool, data terminal, and educational trading community. No content, signal, metric, or post constitutes financial, investment, legal, or tax advice. Past historical performance is never a guarantee of future returns.
+                  </p>
+                  <p>
+                    <strong>Paper Trading Simulation:</strong> All paper trading features utilize virtual, non-redeemable demo capital ($10,000 USD) for strategy modeling with zero financial liability.
+                  </p>
+                </>
+              )}
+
+              {legalModal === 'terms' && (
+                <>
+                  <p className="font-bold text-white">Subscription & Access Terms:</p>
+                  <p>
+                    Rising Roots provides subscription tiers for access to live option chains, streaming tickers, desk signals, and quantitative tools. Subscriptions are billed on a 30-day recurring term until cancelled.
+                  </p>
+                  <p>
+                    <strong>Cancellation & Renewals:</strong> Members can cancel auto-renewal at any time via their profile settings. Access will remain active until the end of the prepaid 30-day billing period.
+                  </p>
+                  <p>
+                    <strong>Intellectual Property:</strong> Signals, mathematical models, and proprietary indicators published inside the In-Platform VIP Signals Room are licensed exclusively to the paying member and cannot be forwarded, mirrored, or resold without authorization.
+                  </p>
+                </>
+              )}
+
+              {legalModal === 'privacy' && (
+                <>
+                  <p className="font-bold text-emerald-400">Our Privacy Commitment:</p>
+                  <p>
+                    We respect your privacy and employ bank-grade encryption to protect user credentials, session tokens, and transaction records. We never sell, rent, or trade your personal data or email address to third-party marketing companies.
+                  </p>
+                  <p>
+                    <strong>Security:</strong> All user passwords are encrypted using bcrypt hashing. Financial transactions are processed through tokenized payment gateways (Razorpay, Stripe, or on-chain crypto networks) with 256-bit SSL encryption.
+                  </p>
+                </>
+              )}
+            </div>
+
+            <div className="pt-3 border-t border-gray-800 flex justify-end">
+              <button
+                onClick={() => setLegalModal(null)}
+                className="bg-emerald-500 hover:bg-emerald-400 text-gray-950 font-bold px-5 py-2 rounded-xl text-xs cursor-pointer transition-all"
+              >
+                Understood & Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -7,12 +7,12 @@ export const createOrder = async (req, res) => {
     const { planId, amount, currency = 'INR', memberEmail } = req.body;
 
     const plansPriceMap = {
-      pro: 2499,
-      vip: 4999,
-      starter: 999,
+      starter: 2499, // $29/mo (₹2,499)
+      pro: 6499,     // $79/mo (₹6,499)
+      vip: 15999,    // $199/mo (₹15,999)
     };
 
-    const finalAmount = amount || (plansPriceMap[planId] ? plansPriceMap[planId] * 100 : 249900); // Amount in paise
+    const finalAmount = amount || (plansPriceMap[planId] ? plansPriceMap[planId] * 100 : 649900); // Amount in paise
 
     const orderId = `order_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
 
@@ -53,7 +53,11 @@ export const verifyPayment = async (req, res) => {
         member.expiresAt = currentExpiry;
         member.status = 'Active';
         if (planId) {
-          const planNames = { pro: 'Pro Trader', vip: 'VIP Signals & Mentorship', starter: 'Community Pass' };
+          const planNames = {
+            pro: 'Pro Signals & Option Desk',
+            vip: 'Institutional VIP Desk',
+            starter: 'Crypto & Forex Starter',
+          };
           if (planNames[planId]) member.plan = planNames[planId];
         }
 

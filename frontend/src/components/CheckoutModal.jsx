@@ -7,8 +7,11 @@ function CheckoutModal({ plan, onClose, initialPromo = '' }) {
   const [promoApplied, setPromoApplied] = useState(true);
   const [discountPercent, setDiscountPercent] = useState(20);
   const [promoError, setPromoError] = useState('');
-  const [selectedMethod, setSelectedMethod] = useState('upi'); // 'upi', 'card', 'netbanking'
+  const [selectedMethod, setSelectedMethod] = useState('upi'); // 'upi', 'card', 'crypto', 'netbanking'
   const [upiApp, setUpiApp] = useState('gpay'); // 'gpay', 'phonepe', 'paytm', 'cred'
+  const [cryptoNetwork, setCryptoNetwork] = useState('USDT-TRC20');
+  const [copiedAddress, setCopiedAddress] = useState(false);
+  const [txHash, setTxHash] = useState('');
   const [cardNumber, setCardNumber] = useState('4532 •••• •••• 8821');
   const [cardExpiry, setCardExpiry] = useState('11/29');
   const [cardCvv, setCardCvv] = useState('742');
@@ -285,17 +288,18 @@ function CheckoutModal({ plan, onClose, initialPromo = '' }) {
                 Select Payment Method
               </label>
 
-              <div className="grid grid-cols-3 gap-2">
+              <div className="grid grid-cols-4 gap-2">
                 {[
                   { id: 'upi', label: 'UPI / QR', icon: '📱' },
                   { id: 'card', label: 'Cards', icon: '💳' },
-                  { id: 'netbanking', label: 'Net Banking', icon: '🏦' },
+                  { id: 'crypto', label: 'USDT Crypto', icon: '🪙' },
+                  { id: 'netbanking', label: 'NetBank', icon: '🏦' },
                 ].map((m) => (
                   <button
                     key={m.id}
                     type="button"
                     onClick={() => setSelectedMethod(m.id)}
-                    className={`p-2.5 rounded-xl text-xs font-semibold flex items-center justify-center gap-2 border transition-all cursor-pointer ${
+                    className={`p-2.5 rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5 border transition-all cursor-pointer ${
                       selectedMethod === m.id
                         ? 'bg-emerald-500/10 border-emerald-500/40 text-emerald-300 shadow-md shadow-emerald-500/5'
                         : 'bg-gray-950 border-gray-800 text-gray-400 hover:text-white hover:border-gray-700'
@@ -386,6 +390,89 @@ function CheckoutModal({ plan, onClose, initialPromo = '' }) {
                         className="w-full bg-gray-900 border border-gray-800 text-white rounded-xl px-3 py-2 text-xs font-mono focus:outline-none focus:border-emerald-500"
                       />
                     </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Crypto Tab */}
+              {selectedMethod === 'crypto' && (
+                <div className="bg-gray-950 border border-gray-800 rounded-2xl p-4 space-y-3">
+                  <div className="flex items-center justify-between text-xs text-gray-400">
+                    <span>Pay with USDT / USDC</span>
+                    <span className="text-[10px] text-emerald-400 font-bold bg-emerald-500/10 px-2 py-0.5 rounded-full">
+                      Zero Bank Restrictions
+                    </span>
+                  </div>
+
+                  <div className="grid grid-cols-3 gap-2">
+                    {[
+                      { id: 'USDT-TRC20', name: 'USDT', network: 'Tron (TRC20)' },
+                      { id: 'USDT-BEP20', name: 'USDT', network: 'BSC (BEP20)' },
+                      { id: 'USDC-SOL', name: 'USDC', network: 'Solana' },
+                    ].map((net) => (
+                      <button
+                        key={net.id}
+                        type="button"
+                        onClick={() => setCryptoNetwork(net.id)}
+                        className={`p-2 rounded-xl text-center border transition-all cursor-pointer ${
+                          cryptoNetwork === net.id
+                            ? 'bg-gray-900 border-emerald-500/40 font-bold text-white shadow'
+                            : 'bg-gray-900/40 border-gray-800 text-gray-400'
+                        }`}
+                      >
+                        <div className="text-xs font-bold text-emerald-400">{net.name}</div>
+                        <div className="text-[10px] text-gray-500">{net.network}</div>
+                      </button>
+                    ))}
+                  </div>
+
+                  <div className="bg-gray-900/80 p-3.5 rounded-xl border border-gray-800 space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[10px] uppercase font-bold text-gray-400">Official Desk Treasury ({cryptoNetwork})</span>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const addr =
+                            cryptoNetwork === 'USDT-TRC20'
+                              ? 'TX9qRRootsDeskOfficialTreasuryTRC20x8'
+                              : cryptoNetwork === 'USDT-BEP20'
+                              ? '0x71CRRRootsDeskBSCContract88201x99'
+                              : 'RRDesk88SolanaOfficialTreasuryUSDC9';
+                          navigator.clipboard?.writeText(addr);
+                          setCopiedAddress(true);
+                          setTimeout(() => setCopiedAddress(false), 2500);
+                        }}
+                        className="text-[10px] bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 px-2 py-0.5 rounded cursor-pointer font-bold"
+                      >
+                        {copiedAddress ? '✓ Copied!' : 'Copy Address'}
+                      </button>
+                    </div>
+
+                    <div className="font-mono text-xs text-white break-all select-all bg-gray-950 p-2 rounded-lg border border-gray-800/80">
+                      {cryptoNetwork === 'USDT-TRC20' && 'TX9qRRootsDeskOfficialTreasuryTRC20x8'}
+                      {cryptoNetwork === 'USDT-BEP20' && '0x71CRRRootsDeskBSCContract88201x99'}
+                      {cryptoNetwork === 'USDC-SOL' && 'RRDesk88SolanaOfficialTreasuryUSDC9'}
+                    </div>
+
+                    <div className="flex items-center justify-between text-[11px] pt-1">
+                      <span className="text-gray-400">Required Amount:</span>
+                      <span className="font-mono font-bold text-emerald-400">
+                        ${Math.round(finalPrice / 82)} USDT ({plan.name})
+                      </span>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-[10px] font-semibold text-gray-400 mb-1">
+                      Transaction Hash / TXID (Optional)
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="e.g. 0x8a9f... or Tron TXID for instant matching"
+                      value={txHash}
+                      onChange={(e) => setTxHash(e.target.value)}
+                      className="w-full bg-gray-950 border border-gray-800 rounded-xl px-3 py-1.5 text-xs font-mono text-white focus:outline-none focus:border-emerald-500"
+                    />
                   </div>
                 </div>
               )}
