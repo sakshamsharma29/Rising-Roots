@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { getGlobalMarketStatus } from '../utils/marketHours';
 
 // Default initial asset lists
@@ -46,12 +46,28 @@ export default function TradingTerminal() {
   }, []);
 
   // Watchlist state
+  const [searchParams] = useSearchParams();
   const [cryptoAssets, setCryptoAssets] = useState(DEFAULT_CRYPTO_ASSETS);
   const [forexAssets, setForexAssets] = useState(DEFAULT_FOREX_ASSETS);
   const [activeTab, setActiveTab] = useState('crypto'); // 'crypto' | 'forex' | 'all'
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedAsset, setSelectedAsset] = useState(DEFAULT_CRYPTO_ASSETS[0]);
   const [tickDirection, setTickDirection] = useState({});
+
+  // Auto-select asset from URL query param if arriving from VIP Signals room
+  useEffect(() => {
+    const symbolParam = searchParams.get('symbol');
+    if (symbolParam) {
+      const cleanParam = symbolParam.replace(/[^A-Za-z0-9]/g, '').toUpperCase();
+      const match = [...DEFAULT_CRYPTO_ASSETS, ...DEFAULT_FOREX_ASSETS].find(
+        (a) => a.symbol.replace(/[^A-Za-z0-9]/g, '').toUpperCase() === cleanParam
+      );
+      if (match) {
+        setSelectedAsset(match);
+        setActiveTab(match.type);
+      }
+    }
+  }, [searchParams]);
 
   // Chart Timeframe & Points
   const [timeframe, setTimeframe] = useState('15m');

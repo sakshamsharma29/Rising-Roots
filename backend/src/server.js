@@ -96,7 +96,7 @@ const ensureInitialSetup = async () => {
           features: [
             'Full Option Chain with Greeks (Delta/IV)',
             'Max Pain & PCR Ratio Analysis',
-            'Telegram VIP Signals Channel',
+            'In-Platform VIP Signals Room & Alerts',
             'Advanced Paper Trading with SL/TP',
             'Priority Desk Support',
           ],
@@ -111,7 +111,7 @@ const ensureInitialSetup = async () => {
             '1-on-1 Mentorship with Desk Quant',
             'Custom Algo Trading Blueprints',
             'Multi-Exchange Order Flow & Heatmaps',
-            'Direct WhatsApp & VIP Telegram',
+            'Direct WhatsApp & VIP Signals Room',
           ],
           status: 'Active',
         },

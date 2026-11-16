@@ -167,37 +167,32 @@ function CheckoutModal({ plan, onClose, initialPromo = '' }) {
               </p>
             </div>
 
-            {/* VIP Telegram Box */}
-            <div className="bg-gradient-to-r from-gray-950 via-gray-900 to-gray-950 border border-green-500/30 p-4 rounded-2xl text-left space-y-2">
+            {/* VIP Access Box */}
+            <div className="bg-gradient-to-r from-gray-950 via-gray-900 to-gray-950 border border-emerald-500/30 p-4 rounded-2xl text-left space-y-2">
               <div className="flex items-center justify-between">
                 <span className="text-xs font-bold text-white flex items-center gap-2">
-                  <span>🚀</span> Live Telegram VIP Signals Channel
+                  <span>🔥</span> In-Platform VIP Signals Room Active
                 </span>
-                <span className="text-[10px] text-green-400 font-semibold bg-green-500/10 px-2 py-0.5 rounded-full">
-                  Instant Link Ready
+                <span className="text-[10px] text-emerald-400 font-semibold bg-emerald-500/10 px-2 py-0.5 rounded-full">
+                  Access Granted
                 </span>
               </div>
               <p className="text-[11px] text-gray-400">
-                Join our private community channel now to receive real-time intraday momentum calls.
+                You now have instant access to real-time desk signals, entry/target levels, and 1-click paper trading on our native platform.
               </p>
-              <a
-                href="https://t.me/+RisingRootsVIP_Official"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="w-full bg-blue-500 hover:bg-blue-400 text-white font-bold py-2.5 rounded-xl text-xs flex items-center justify-center gap-2 transition-all mt-2"
+              <button
+                onClick={handleGoToPortal}
+                className="w-full bg-emerald-500 hover:bg-emerald-400 text-gray-950 font-black py-2.5 rounded-xl text-xs flex items-center justify-center gap-2 transition-all cursor-pointer shadow-lg shadow-emerald-500/20 mt-2"
               >
-                <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
-                  <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm4.64 6.8c-.15 1.58-.8 5.42-1.13 7.19-.14.75-.42 1-.68 1.03-.58.05-1.02-.38-1.58-.75-.88-.58-1.38-.94-2.23-1.5-.99-.65-.35-1.01.22-1.59.15-.15 2.71-2.48 2.76-2.69.01-.03.01-.14-.07-.2-.08-.06-.19-.04-.27-.02-.12.03-1.99 1.27-5.62 3.72-.53.36-1.01.54-1.44.53-.47-.01-1.38-.27-2.05-.49-.83-.27-1.49-.42-1.43-.89.03-.25.38-.51 1.07-.78 4.2-1.83 7-3.04 8.4-3.63 4-.17 4.83.68 4.88 2.27z"/>
-                </svg>
-                Join Telegram Channel
-              </a>
+                <span>🔥 Enter VIP Signals Room Now →</span>
+              </button>
             </div>
 
             <button
               onClick={handleGoToPortal}
-              className="w-full bg-green-500 hover:bg-green-400 text-gray-950 font-bold py-3.5 rounded-xl text-sm transition-all shadow-lg shadow-green-500/20 cursor-pointer"
+              className="w-full bg-gray-800 hover:bg-gray-700 text-white font-bold py-3 rounded-xl text-xs transition-all border border-gray-700 cursor-pointer"
             >
-              Enter Member Portal Dashboard →
+              Go to Member Dashboard →
             </button>
           </div>
         )}

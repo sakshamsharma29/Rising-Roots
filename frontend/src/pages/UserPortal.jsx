@@ -120,7 +120,7 @@ function UserPortal() {
           </span>
           <h1 className="text-3xl font-extrabold text-white">Welcome back, {user.name || 'Trader'}!</h1>
           <p className="text-gray-400 text-sm mt-1">
-            Access your 24/7 crypto option chains, live price feeds, and Telegram VIP channel.
+            Access your 24/7 crypto option chains, live price feeds, and native VIP Signals Room.
           </p>
         </div>
 

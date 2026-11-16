@@ -210,7 +210,7 @@ function Dashboard({ onOpenAddMember }) {
         <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <div className="bg-gray-900 border border-gray-800 rounded-2xl max-w-lg w-full p-6 space-y-4">
             <h3 className="text-xl font-bold text-white">Broadcast Announcement</h3>
-            <p className="text-xs text-gray-400">Send an instant alert message to all connected Telegram & Discord channel members.</p>
+            <p className="text-xs text-gray-400">Broadcasts instantly to all members in the native In-Platform VIP Signals Room and any connected channels.</p>
 
             {broadcastSent ? (
               <div className="bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 p-4 rounded-xl text-center text-sm font-semibold">

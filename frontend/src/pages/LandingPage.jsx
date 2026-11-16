@@ -133,7 +133,7 @@ function LandingPage() {
         'Global Subscriber Management (Add, Edit, Revoke)',
         'Pricing & Subscription Tier Customization',
         'Multi-Currency Financial & MRR Reports',
-        'Broadcast Crypto & Forex Signals to Telegram/Discord',
+        'In-Platform VIP Broadcasts & Instant Signal Delivery',
         'Option Chain & Liquidation Alert Webhooks',
         'Audit Logging & API Security Access',
       ],
@@ -150,7 +150,7 @@ function LandingPage() {
         '24/7 Real-Time Crypto & Forex Price Watchlists',
         'Interactive BTC & ETH Option Chain with Greeks (Delta/IV)',
         'Risk-Free $10,000 Virtual Paper Trading Simulator',
-        'Instant Telegram VIP Signal Channel Access',
+        'Instant Access to In-Platform VIP Signals Room',
         'Put-Call Ratio (PCR) & Max Pain Level Analytics',
         'Personal Subscriber Profile Management',
       ],
@@ -415,7 +415,7 @@ function LandingPage() {
                 'Deribit & Binance Live Options Surface',
                 'Global Forex Sessions (London, NY, Tokyo)',
                 'Risk-Free $10,000 Paper Trading Simulator',
-                'Telegram VIP Signal Dispatcher',
+                'In-Platform VIP Signals Room & Desk Feed',
               ].map((item, i) => (
                 <div key={i} className="flex items-center gap-3 bg-gray-950/80 border border-gray-800/50 p-3 rounded-xl">
                   <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse shrink-0"></span>
@@ -501,9 +501,9 @@ function LandingPage() {
               desc: 'Test options scalping and spot strategies with zero financial risk. Track floating P&L in real-time and square off positions.',
             },
             {
-              icon: '🤖',
-              title: 'Automated Telegram Dispatch',
-              desc: 'Broadcast high-conviction trade setups directly to private VIP Telegram groups with automated member invite management.',
+              icon: '🔥',
+              title: 'Native VIP Signals Room',
+              desc: 'Broadcast high-conviction trade setups directly on our platform with live entry/target metrics, audio chimes, and 1-click paper execution.',
             },
             {
               icon: '📊',
@@ -620,7 +620,7 @@ function LandingPage() {
                 {[
                   'Full Deribit-Style Option Chain with Greeks (Delta/IV)',
                   'Put-Call Ratio (PCR) & Max Pain Strike Analytics',
-                  'Instant 1-Click Telegram VIP Signal Channel Access',
+                  'Instant Access to In-Platform VIP Signals Room & Alerts',
                   'Advanced Paper Trading with Square-Off & SL/TP',
                   'Priority Trading Desk Support',
                 ].map((item, i) => (
@@ -674,7 +674,7 @@ function LandingPage() {
                   'Everything in Pro Trader Desk included',
                   '1-on-1 Weekly Zoom Mentorship with Senior Desk Quant',
                   'Custom Algo Trading Setup & Risk Hedging Blueprint',
-                  'Private Direct Desk Access (WhatsApp / Telegram VIP)',
+                  'Private Direct Desk Access (VIP Signals Room & Direct WhatsApp)',
                   'Multi-Exchange Order Flow & Liquidation Heatmaps',
                 ].map((item, i) => (
                   <div key={i} className="flex items-center gap-3">

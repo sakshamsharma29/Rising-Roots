@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 
 export default function VipSignals() {
@@ -25,8 +25,37 @@ export default function VipSignals() {
   const [submitting, setSubmitting] = useState(false);
   const [toast, setToast] = useState(null);
 
-  // Sound chime toggle
+  // Sound chime toggle & Web Audio API
   const [soundEnabled, setSoundEnabled] = useState(true);
+  const audioContextRef = useRef(null);
+  const prevCountRef = useRef(null);
+
+  const playChime = () => {
+    try {
+      const AudioCtx = window.AudioContext || window.webkitAudioContext;
+      if (!AudioCtx) return;
+      if (!audioContextRef.current) {
+        audioContextRef.current = new AudioCtx();
+      }
+      const ctx = audioContextRef.current;
+      if (ctx.state === 'suspended') {
+        ctx.resume();
+      }
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(784, ctx.currentTime);
+      osc.frequency.exponentialRampToValueAtTime(1046.5, ctx.currentTime + 0.15);
+      gain.gain.setValueAtTime(0.2, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.5);
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start();
+      osc.stop(ctx.currentTime + 0.5);
+    } catch (e) {
+      // Audio autoplay policy
+    }
+  };
 
   // Fetch broadcasts from backend
   const fetchBroadcasts = async () => {
@@ -34,6 +63,10 @@ export default function VipSignals() {
       const res = await fetch(`${API_URL}/api/broadcasts`);
       const data = await res.json();
       if (data.success && Array.isArray(data.data)) {
+        if (prevCountRef.current !== null && data.data.length > prevCountRef.current && soundEnabled) {
+          playChime();
+        }
+        prevCountRef.current = data.data.length;
         setBroadcasts(data.data);
       }
     } catch (err) {
@@ -134,6 +167,21 @@ export default function VipSignals() {
         </div>
 
         <div className="flex flex-wrap items-center gap-3 self-end sm:self-auto">
+          <button
+            onClick={() => {
+              setSoundEnabled((prev) => !prev);
+              if (!soundEnabled) playChime();
+            }}
+            className={`px-3.5 py-2.5 rounded-xl text-xs font-bold transition-all border flex items-center gap-1.5 cursor-pointer ${
+              soundEnabled
+                ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/20'
+                : 'bg-gray-800 border-gray-700 text-gray-400 hover:text-white'
+            }`}
+            title={soundEnabled ? 'Alert chime is ON (rings on new signal)' : 'Alert chime is MUTED'}
+          >
+            <span>{soundEnabled ? '🔔 Alert Chime ON' : '🔕 Chime Muted'}</span>
+          </button>
+
           {isAdmin && (
             <button
               onClick={() => setShowCreateForm((prev) => !prev)}
@@ -463,7 +511,10 @@ export default function VipSignals() {
                 {/* Card Actions Footer */}
                 <div className="flex items-center justify-between pt-4 mt-2 border-t border-gray-800/60">
                   <button
-                    onClick={() => navigate('/dashboard/terminal')}
+                    onClick={() => {
+                      const sym = (item.asset || 'BTC/USDT').replace('/', '');
+                      navigate(`/dashboard/terminal?symbol=${sym}`);
+                    }}
                     className="bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer"
                   >
                     <span>⚡ Trade on Paper Desk →</span>
