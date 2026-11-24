@@ -23,6 +23,11 @@ import {
   getDeltaTickersHandler,
   getDeltaOptionsHandler,
 } from '../controllers/deltaController.js';
+import {
+  submitQuery,
+  getAllQueries,
+  updateQueryStatus,
+} from '../controllers/queryController.js';
 
 const router = express.Router();
 
@@ -54,5 +59,10 @@ router.delete('/history/trades/:id', deleteHistoricalTrade);
 // Delta Exchange Public APIs (Institutional Options & Tickers)
 router.get('/delta/tickers', getDeltaTickersHandler);
 router.get('/delta/options', getDeltaOptionsHandler);
+
+// User Queries & Contact Messages
+router.post('/queries', submitQuery);
+router.get('/queries', getAllQueries);
+router.patch('/queries/:id', updateQueryStatus);
 
 export default router;

@@ -8,6 +8,10 @@ function AuthPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [name, setName] = useState('');
+  const [phone, setPhone] = useState('');
+  const [telegramUsername, setTelegramUsername] = useState('');
+  const [city, setCity] = useState('');
+  const [preferredMarket, setPreferredMarket] = useState('Crypto & Forex');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
@@ -19,7 +23,9 @@ function AuthPage() {
 
     const API_URL = import.meta.env.VITE_API_URL || (import.meta.env.DEV ? 'http://localhost:5000' : '');
     const endpoint = mode === 'login' ? `${API_URL}/api/auth/login` : `${API_URL}/api/auth/register`;
-    const payload = mode === 'login' ? { email, password } : { name, email, password };
+    const payload = mode === 'login'
+      ? { email, password }
+      : { name, email, password, phone, telegramUsername, city, preferredMarket };
 
     try {
       const res = await fetch(endpoint, {
@@ -43,7 +49,7 @@ function AuthPage() {
         localStorage.setItem('rr_auth', JSON.stringify({ email, name: email.split('@')[0], role: userRole }));
         navigate('/dashboard');
       } else if (mode === 'signup' && name && email && password.length >= 6) {
-        localStorage.setItem('rr_auth', JSON.stringify({ email, name, role: userRole }));
+        localStorage.setItem('rr_auth', JSON.stringify({ email, name, role: userRole, phone, telegramUsername, city }));
         navigate('/dashboard');
       } else {
         setError('Server unreachable. Please check backend API.');
@@ -121,17 +127,75 @@ function AuthPage() {
 
           <form onSubmit={handleSubmit} className="space-y-5">
             {mode === 'signup' && (
-              <div>
-                <label className="block text-sm font-medium text-gray-300 mb-1.5">Full Name</label>
-                <input
-                  type="text"
-                  placeholder="e.g. Rahul Sharma"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  className="w-full bg-gray-900 border border-gray-800 rounded-xl px-4 py-3 text-sm text-white focus:border-green-500 focus:outline-none focus:ring-1 focus:ring-green-500/30 transition-all placeholder-gray-600"
-                  required
-                />
-              </div>
+              <>
+                <div>
+                  <label className="block text-sm font-medium text-gray-300 mb-1.5">Full Name</label>
+                  <input
+                    type="text"
+                    placeholder="e.g. Rahul Sharma"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    className="w-full bg-gray-900 border border-gray-800 rounded-xl px-4 py-3 text-sm text-white focus:border-green-500 focus:outline-none focus:ring-1 focus:ring-green-500/30 transition-all placeholder-gray-600"
+                    required
+                  />
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-300 mb-1.5">
+                      Phone / WhatsApp <span className="text-emerald-400">*</span>
+                    </label>
+                    <input
+                      type="tel"
+                      placeholder="+91 98765 43210"
+                      value={phone}
+                      onChange={(e) => setPhone(e.target.value)}
+                      className="w-full bg-gray-900 border border-gray-800 rounded-xl px-4 py-3 text-sm text-white focus:border-green-500 focus:outline-none focus:ring-1 focus:ring-green-500/30 transition-all placeholder-gray-600"
+                      required
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-300 mb-1.5">
+                      Telegram Username
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="@rahul_trader"
+                      value={telegramUsername}
+                      onChange={(e) => setTelegramUsername(e.target.value)}
+                      className="w-full bg-gray-900 border border-gray-800 rounded-xl px-4 py-3 text-sm text-white focus:border-green-500 focus:outline-none focus:ring-1 focus:ring-green-500/30 transition-all placeholder-gray-600"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-300 mb-1.5">City / State</label>
+                    <input
+                      type="text"
+                      placeholder="e.g. Mumbai, Maharashtra"
+                      value={city}
+                      onChange={(e) => setCity(e.target.value)}
+                      className="w-full bg-gray-900 border border-gray-800 rounded-xl px-4 py-3 text-sm text-white focus:border-green-500 focus:outline-none focus:ring-1 focus:ring-green-500/30 transition-all placeholder-gray-600"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-300 mb-1.5">Trading Focus</label>
+                    <select
+                      value={preferredMarket}
+                      onChange={(e) => setPreferredMarket(e.target.value)}
+                      className="w-full bg-gray-900 border border-gray-800 rounded-xl px-4 py-3 text-sm text-white focus:border-green-500 focus:outline-none focus:ring-1 focus:ring-green-500/30 transition-all"
+                    >
+                      <option value="Crypto & Forex">Crypto & Forex</option>
+                      <option value="Indian Indices & Options">Indian Indices (Nifty/Sensex)</option>
+                      <option value="Commodities (Gold/Silver)">Commodities (Gold/Silver)</option>
+                      <option value="All Markets">All Markets</option>
+                    </select>
+                  </div>
+                </div>
+              </>
             )}
 
             <div>

@@ -91,7 +91,7 @@ function Dashboard({ onOpenAddMember }) {
           </div>
           <h1 className="text-3xl font-extrabold text-white tracking-tight">Crypto & Forex Control Center</h1>
           <p className="text-gray-400 text-sm mt-1">
-            24/7 crypto option chains, global forex tracking, and paper trading risk management.
+            24/7 crypto option chains, multi-asset live charts, and audited track record.
           </p>
         </div>
 

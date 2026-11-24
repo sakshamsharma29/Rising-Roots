@@ -88,9 +88,13 @@ export const getDeltaTickers = async () => {
   }
 };
 
-// 2. Fetch Structured Crypto Options Chain from Delta Exchange
+// 2. Fetch Structured Crypto Options Chain from Delta Exchange (BTC & ETH only)
 export const getDeltaOptionsChain = async (asset = 'BTC', selectedExpiry = null) => {
   const assetKey = asset.toUpperCase();
+  if (assetKey !== 'BTC' && assetKey !== 'ETH') {
+    throw new Error(`Delta Exchange officially lists crypto options contracts only for BTC and ETH (not ${assetKey}).`);
+  }
+
   const cacheKey = `${assetKey}_${selectedExpiry || 'all'}`;
   const now = Date.now();
 
@@ -104,98 +108,7 @@ export const getDeltaOptionsChain = async (asset = 'BTC', selectedExpiry = null)
     const json = await res.json();
 
     if (!json.result || !Array.isArray(json.result) || json.result.length === 0) {
-      // Fallback: Generate options surface using Delta Exchange's live spot price for unlisted assets (e.g. SOL)
-      const allTickers = await getDeltaTickers();
-      const assetTicker = allTickers.find((t) => t.symbol.startsWith(assetKey));
-      const spotPrice = assetTicker ? assetTicker.spot : (assetKey === 'SOL' ? 71.5 : 100);
-      const step = assetKey === 'SOL' ? 2 : 5;
-      const center = Math.round(spotPrice / step) * step;
-      const pad = (n) => String(n).padStart(2, '0');
-      const d = new Date();
-      const todayStr = `${pad(d.getDate())}${pad(d.getMonth() + 1)}${String(d.getFullYear()).slice(-2)}`;
-      const activeExpiry = selectedExpiry || todayStr;
-
-      const strikes = [];
-      let totalCallOi = 0;
-      let totalPutOi = 0;
-
-      for (let i = -7; i <= 7; i++) {
-        const st = center + i * step;
-        if (st <= 0) continue;
-        const callItm = st < spotPrice;
-        const putItm = st > spotPrice;
-        const callOi = Math.round(120 + Math.abs(i) * 15);
-        const putOi = Math.round(95 + Math.abs(i) * 12);
-        totalCallOi += callOi;
-        totalPutOi += putOi;
-
-        const callLtp = parseFloat(Math.max(0.5, callItm ? (spotPrice - st) + 2.5 : Math.max(0.2, (center + step * 7 - st) * 0.08)).toFixed(2));
-        const putLtp = parseFloat(Math.max(0.5, putItm ? (st - spotPrice) + 2.5 : Math.max(0.2, (st - (center - step * 7)) * 0.08)).toFixed(2));
-
-        const callObj = {
-          symbol: `C-${assetKey}-${st}-${activeExpiry}`,
-          contractType: 'CALL',
-          ltp: callLtp,
-          changePct: 1.25,
-          iv: 58.4,
-          delta: callItm ? 0.68 : 0.32,
-          theta: -2.4,
-          gamma: 0.004,
-          oi: callOi,
-          volume: callOi * 2,
-          bid: parseFloat((callLtp * 0.98).toFixed(2)),
-          ask: parseFloat((callLtp * 1.02).toFixed(2)),
-        };
-
-        const putObj = {
-          symbol: `P-${assetKey}-${st}-${activeExpiry}`,
-          contractType: 'PUT',
-          ltp: putLtp,
-          changePct: -1.15,
-          iv: 60.1,
-          delta: putItm ? -0.68 : -0.32,
-          theta: -2.6,
-          gamma: 0.004,
-          oi: putOi,
-          volume: putOi * 2,
-          bid: parseFloat((putLtp * 0.98).toFixed(2)),
-          ask: parseFloat((putLtp * 1.02).toFixed(2)),
-        };
-
-        strikes.push({
-          strike: st,
-          isAtm: st === center,
-          callItm,
-          putItm,
-          isCallITM: callItm,
-          isPutITM: putItm,
-          call: callObj,
-          calls: callObj,
-          put: putObj,
-          puts: putObj,
-        });
-      }
-
-      const pcrRatio = totalCallOi > 0 ? parseFloat((totalPutOi / totalCallOi).toFixed(2)) : 0.85;
-      const result = {
-        asset: assetKey,
-        exchange: 'Delta Exchange Live Spot Feed',
-        spotPrice,
-        atmStrike: center,
-        maxPainStrike: center,
-        pcrRatio,
-        activeExpiry,
-        activeExpiryLabel: formatDeltaExpiry(activeExpiry),
-        availableExpiries: [
-          { id: activeExpiry, label: formatDeltaExpiry(activeExpiry) },
-        ],
-        totalContractsCount: strikes.length * 2,
-        rows: strikes,
-        timestamp: new Date().toISOString(),
-      };
-
-      optionsCache[cacheKey] = { data: result, timestamp: now };
-      return result;
+      throw new Error(`No active options contracts returned from Delta Exchange for ${assetKey}`);
     }
 
     const contracts = json.result;

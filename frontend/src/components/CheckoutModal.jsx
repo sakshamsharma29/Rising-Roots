@@ -181,7 +181,7 @@ function CheckoutModal({ plan, onClose, initialPromo = '' }) {
                 </span>
               </div>
               <p className="text-[11px] text-gray-400">
-                You now have instant access to real-time desk signals, entry/target levels, and 1-click paper trading on our native platform.
+                You now have instant access to real-time desk signals, entry/target levels, and multi-asset live charting on our native platform.
               </p>
               <button
                 onClick={handleGoToPortal}

@@ -8,6 +8,12 @@ function Header({ searchTerm, setSearchTerm, onOpenAddMember }) {
   const user = JSON.parse(localStorage.getItem('rr_auth') || '{}');
   const isAdmin = user.role === 'admin';
 
+  const handleLogout = () => {
+    localStorage.removeItem('rr_token');
+    localStorage.removeItem('rr_auth');
+    navigate('/login');
+  };
+
   // Get initials for avatar
   const getInitials = () => {
     if (user.name) {
@@ -72,7 +78,7 @@ function Header({ searchTerm, setSearchTerm, onOpenAddMember }) {
         <div className="h-6 w-px bg-gray-800"></div>
 
         {/* User Profile */}
-        <div className="flex items-center gap-3 cursor-pointer">
+        <div className="flex items-center gap-3">
           <div className="w-9 h-9 rounded-full bg-gradient-to-tr from-green-500 to-emerald-300 flex items-center justify-center text-gray-950 font-bold text-sm">
             {getInitials()}
           </div>
@@ -81,6 +87,18 @@ function Header({ searchTerm, setSearchTerm, onOpenAddMember }) {
             <p className="text-xs text-gray-400 capitalize">{user.role === 'admin' ? 'Owner / Admin' : 'Subscriber'}</p>
           </div>
         </div>
+
+        {/* Prominent Upper Right Logout */}
+        <button
+          onClick={handleLogout}
+          title="Sign out of account"
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-gray-800 hover:bg-rose-500/20 text-gray-300 hover:text-rose-400 border border-gray-700 hover:border-rose-500/40 text-xs font-bold transition-all cursor-pointer shadow-sm"
+        >
+          <svg className="w-4 h-4 text-rose-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+          </svg>
+          <span className="hidden md:inline">Logout</span>
+        </button>
       </div>
     </header>
   );

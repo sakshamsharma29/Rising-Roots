@@ -171,9 +171,10 @@ function Members({ searchTerm, showAddModal, onCloseAddModal }) {
               <table className="w-full text-left text-sm text-gray-300">
                 <thead className="bg-gray-950 text-gray-400 uppercase text-xs border-b border-gray-800">
                   <tr>
-                    <th className="py-3.5 px-4 font-semibold">Subscriber Name</th>
-                    <th className="py-3.5 px-4 font-semibold">Email</th>
-                    <th className="py-3.5 px-4 font-semibold">Subscription Plan</th>
+                    <th className="py-3.5 px-4 font-semibold">Subscriber</th>
+                    <th className="py-3.5 px-4 font-semibold">Phone / WhatsApp</th>
+                    <th className="py-3.5 px-4 font-semibold">Telegram / Location</th>
+                    <th className="py-3.5 px-4 font-semibold">Plan & Focus</th>
                     <th className="py-3.5 px-4 font-semibold">Status</th>
                     <th className="py-3.5 px-4 font-semibold text-right">Actions</th>
                   </tr>
@@ -181,9 +182,38 @@ function Members({ searchTerm, showAddModal, onCloseAddModal }) {
                 <tbody className="divide-y divide-gray-800/60">
                   {members.map((m) => (
                     <tr key={m.id || m._id} className="hover:bg-gray-800/40 transition-colors">
-                      <td className="py-4 px-4 font-medium text-white">{m.name}</td>
-                      <td className="py-4 px-4 text-xs font-mono text-gray-400">{m.email}</td>
-                      <td className="py-4 px-4 text-xs text-gray-300">{m.plan}</td>
+                      <td className="py-4 px-4">
+                        <div className="font-medium text-white">{m.name}</div>
+                        <div className="text-xs font-mono text-gray-400">{m.email}</div>
+                      </td>
+                      <td className="py-4 px-4 text-xs font-mono">
+                        {m.phone ? (
+                          <a
+                            href={`https://wa.me/${m.phone.replace(/[^0-9]/g, '')}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 font-semibold"
+                            title="Chat on WhatsApp"
+                          >
+                            <span>💬</span>
+                            <span>{m.phone}</span>
+                          </a>
+                        ) : (
+                          <span className="text-gray-600">Not provided</span>
+                        )}
+                      </td>
+                      <td className="py-4 px-4 text-xs">
+                        {m.telegramUsername ? (
+                          <div className="text-blue-400 font-mono font-medium">{m.telegramUsername}</div>
+                        ) : (
+                          <div className="text-gray-600">No Telegram</div>
+                        )}
+                        <div className="text-gray-400 text-[11px] mt-0.5">{m.city || 'Location N/A'}</div>
+                      </td>
+                      <td className="py-4 px-4 text-xs">
+                        <div className="text-gray-200 font-semibold">{m.plan}</div>
+                        <div className="text-emerald-400 text-[11px]">{m.preferredMarket || 'All Markets'}</div>
+                      </td>
                       <td className="py-4 px-4">
                         <span
                           onClick={() => handleToggleStatus(m.id || m._id)}

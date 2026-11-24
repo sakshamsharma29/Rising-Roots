@@ -6,6 +6,12 @@ const userSchema = new mongoose.Schema(
     email: { type: String, required: true, unique: true, lowercase: true, trim: true },
     passwordHash: { type: String, required: true },
     role: { type: String, enum: ['admin', 'user'], default: 'user' },
+    phone: { type: String, trim: true, default: '' },
+    telegramUsername: { type: String, trim: true, default: '' },
+    city: { type: String, trim: true, default: '' },
+    state: { type: String, trim: true, default: '' },
+    tradingExperience: { type: String, default: 'Intermediate' },
+    preferredMarket: { type: String, default: 'All Markets' },
     orgId: { type: mongoose.Schema.Types.ObjectId, ref: 'Organization', index: true },
   },
   {

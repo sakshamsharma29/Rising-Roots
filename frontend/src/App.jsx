@@ -17,6 +17,8 @@ import TradingTerminal from './pages/TradingTerminal';
 import OptionChain from './pages/OptionChain';
 import VipSignals from './pages/VipSignals';
 import TradeHistory from './pages/TradeHistory';
+import AboutUs from './pages/AboutUs';
+import ContactUs from './pages/ContactUs';
 import Sidebar from './components/Sidebar';
 import Header from './components/Header';
 
@@ -99,6 +101,8 @@ function App() {
       <Routes>
         {/* Public routes */}
         <Route path="/" element={<LandingPage />} />
+        <Route path="/about" element={<AboutUs />} />
+        <Route path="/contact" element={<ContactUs />} />
         <Route path="/login" element={<AuthPage />} />
         <Route
           path="/history"

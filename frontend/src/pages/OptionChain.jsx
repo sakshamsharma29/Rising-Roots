@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { getGlobalMarketStatus } from '../utils/marketHours';
 
-// Base option specifications
+// Base option specifications (Delta Exchange officially lists BTC and ETH options)
 const UNDERLYING_CONFIGS = {
   BTC: {
     symbol: 'BTCUSDT',
@@ -21,15 +21,6 @@ const UNDERLYING_CONFIGS = {
     strikesRange: 9,
     baseIV: 58.2,
     lotSize: 1,
-  },
-  SOL: {
-    symbol: 'SOLUSDT',
-    name: 'Solana',
-    baseSpot: 155,
-    strikeStep: 5,
-    strikesRange: 8,
-    baseIV: 68.5,
-    lotSize: 10,
   },
 };
 
@@ -93,18 +84,6 @@ export default function OptionChain() {
     const timer = setInterval(() => setMarketStatus(getGlobalMarketStatus()), 1000);
     return () => clearInterval(timer);
   }, []);
-
-  // Quick Paper Trade Modal State
-  const [paperModal, setPaperModal] = useState(null); // { strike, type: 'CALL'|'PUT', ltp, symbol }
-  const [orderQuantity, setOrderQuantity] = useState(1);
-  const [orderSubmitting, setOrderSubmitting] = useState(false);
-  const [orderToast, setOrderToast] = useState(null);
-
-  // Paper Margin
-  const [paperMargin, setPaperMargin] = useState(() => {
-    const saved = localStorage.getItem('rr_paper_margin_usd');
-    return saved !== null ? Number(saved) : 10000;
-  });
 
   const config = UNDERLYING_CONFIGS[selectedAsset] || UNDERLYING_CONFIGS.BTC;
 
@@ -376,61 +355,6 @@ export default function OptionChain() {
     return strikesData.slice(start, end);
   }, [strikesData, filterMode]);
 
-  // Handle Paper Trade Execution
-  const handleExecutePaperOption = async (e) => {
-    e.preventDefault();
-    if (!paperModal || orderSubmitting) return;
-
-    const totalCost = parseFloat((paperModal.ltp * orderQuantity).toFixed(2));
-    if (paperMargin < totalCost) {
-      setOrderToast({ type: 'error', message: `Insufficient demo balance! Required: $${totalCost.toLocaleString()}, Available: $${paperMargin.toLocaleString()}` });
-      setTimeout(() => setOrderToast(null), 4000);
-      return;
-    }
-
-    setOrderSubmitting(true);
-
-    const payload = {
-      symbol: `${selectedAsset} ${paperModal.strike} ${paperModal.type}`,
-      assetType: 'options',
-      tradeType: 'long', // Buy call or put
-      entryPrice: paperModal.ltp,
-      quantity: orderQuantity,
-      strikePrice: paperModal.strike,
-      optionType: paperModal.type === 'CALL' ? 'CE' : 'PE',
-      notes: `Paper trade from Option Chain (${selectedExpiry.label})`,
-      tags: ['option-chain', selectedAsset, paperModal.type.toLowerCase()],
-    };
-
-    try {
-      const res = await fetch(`${API_URL}/api/trades`, {
-        method: 'POST',
-        headers,
-        body: JSON.stringify(payload),
-      });
-      const data = await res.json();
-
-      if (data.success) {
-        const newMargin = Math.max(0, paperMargin - totalCost);
-        setPaperMargin(newMargin);
-        localStorage.setItem('rr_paper_margin_usd', newMargin.toString());
-
-        setOrderToast({
-          type: 'success',
-          message: `Paper Order Filled! Bought ${orderQuantity}x ${payload.symbol} @ $${paperModal.ltp}`,
-        });
-        setPaperModal(null);
-      } else {
-        setOrderToast({ type: 'error', message: data.message || 'Failed to record paper trade.' });
-      }
-    } catch (err) {
-      setOrderToast({ type: 'error', message: 'Network error executing paper trade.' });
-    } finally {
-      setOrderSubmitting(false);
-      setTimeout(() => setOrderToast(null), 4500);
-    }
-  };
-
   return (
     <div className="space-y-6 max-w-7xl mx-auto pb-12">
       {/* Top Header & Breadcrumb */}
@@ -451,16 +375,16 @@ export default function OptionChain() {
             </span>
           </h1>
           <p className="text-gray-400 text-sm mt-1">
-            Official Delta Exchange volatility surface, open interest, and native Greeks (Delta, Theta, Gamma, IV). Click any strike to execute simulated paper trades.
+            Official Delta Exchange volatility surface, open interest, Put-Call Ratio (PCR), and native Greeks (Delta, Theta, Gamma, IV) for Bitcoin & Ethereum.
           </p>
         </div>
 
-        {/* Global Market Status & Paper Margin */}
+        {/* Action Buttons */}
         <div className="flex flex-wrap items-center gap-3">
           <div className="bg-gray-900 border border-gray-800 rounded-xl px-4 py-2 text-right">
-            <span className="text-[10px] text-gray-500 uppercase font-bold tracking-wider block">Demo Margin</span>
-            <span className="text-base font-black font-mono text-emerald-400">
-              ${paperMargin.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+            <span className="text-[10px] text-gray-500 uppercase font-bold tracking-wider block">Official Exchange</span>
+            <span className="text-xs font-black font-mono text-emerald-400">
+              Delta Exchange (FIU-Regulated)
             </span>
           </div>
 
@@ -468,7 +392,7 @@ export default function OptionChain() {
             to="/dashboard/terminal"
             className="bg-emerald-500 hover:bg-emerald-400 text-gray-950 font-black px-4 py-2.5 rounded-xl text-xs transition-all shadow-lg shadow-emerald-500/20 flex items-center gap-1.5 cursor-pointer"
           >
-            <span>📊</span> Open Terminal
+            <span>📊</span> Open Live Charts
           </Link>
         </div>
       </div>
@@ -484,7 +408,7 @@ export default function OptionChain() {
             </span>
           </div>
 
-          <div className="grid grid-cols-3 gap-2">
+          <div className="grid grid-cols-2 gap-2">
             {Object.keys(UNDERLYING_CONFIGS).map((sym) => (
               <button
                 key={sym}
@@ -495,8 +419,8 @@ export default function OptionChain() {
                     : 'bg-gray-950 hover:bg-gray-800 text-gray-300 border border-gray-800'
                 }`}
               >
-                <span>{sym === 'BTC' ? '₿' : sym === 'ETH' ? 'Ξ' : '◎'}</span>
-                <span>{sym}</span>
+                <span>{sym === 'BTC' ? '₿' : 'Ξ'}</span>
+                <span>{sym} Options</span>
               </button>
             ))}
           </div>
@@ -608,25 +532,9 @@ export default function OptionChain() {
             <span>ATM Strike</span>
           </span>
           <span className="text-gray-500">•</span>
-          <span className="text-emerald-400 font-medium">Click any row to Paper Trade</span>
+          <span className="text-emerald-400 font-medium">Delta Exchange Real-Time Contract Feed</span>
         </div>
       </div>
-
-      {/* Notification Toast */}
-      {orderToast && (
-        <div
-          className={`p-4 rounded-xl border text-sm font-semibold flex items-center justify-between shadow-xl ${
-            orderToast.type === 'success'
-              ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-300'
-              : 'bg-rose-500/10 border-rose-500/30 text-rose-300'
-          }`}
-        >
-          <span>{orderToast.message}</span>
-          <button onClick={() => setOrderToast(null)} className="text-gray-400 hover:text-white text-xs">
-            ✕
-          </button>
-        </div>
-      )}
 
       {/* Full Option Chain Table */}
       <div className="bg-gray-900 border border-gray-800 rounded-2xl overflow-hidden shadow-2xl">
@@ -678,96 +586,42 @@ export default function OptionChain() {
                 >
                   {/* CALLS SIDE */}
                   <td
-                    onClick={() =>
-                      setPaperModal({
-                        strike: row.strike,
-                        type: 'CALL',
-                        ltp: row.calls.ltp,
-                        delta: row.calls.delta,
-                        iv: row.calls.iv,
-                      })
-                    }
-                    className={`py-2 px-3 text-right cursor-pointer ${
+                    className={`py-2 px-3 text-right ${
                       row.isCallITM ? 'bg-amber-500/5 text-gray-300 font-semibold' : 'text-gray-400'
                     }`}
                   >
                     {row.calls.oi.toLocaleString()}
                   </td>
                   <td
-                    onClick={() =>
-                      setPaperModal({
-                        strike: row.strike,
-                        type: 'CALL',
-                        ltp: row.calls.ltp,
-                        delta: row.calls.delta,
-                        iv: row.calls.iv,
-                      })
-                    }
-                    className={`py-2 px-2 text-right cursor-pointer ${
+                    className={`py-2 px-2 text-right ${
                       row.isCallITM ? 'bg-amber-500/5 text-gray-400' : 'text-gray-500'
                     }`}
                   >
                     {row.calls.iv}%
                   </td>
                   <td
-                    onClick={() =>
-                      setPaperModal({
-                        strike: row.strike,
-                        type: 'CALL',
-                        ltp: row.calls.ltp,
-                        delta: row.calls.delta,
-                        iv: row.calls.iv,
-                      })
-                    }
-                    className={`py-2 px-2 text-right cursor-pointer text-gray-400 ${
+                    className={`py-2 px-2 text-right text-gray-400 ${
                       row.isCallITM ? 'bg-amber-500/5' : ''
                     }`}
                   >
                     {row.calls.delta}
                   </td>
                   <td
-                    onClick={() =>
-                      setPaperModal({
-                        strike: row.strike,
-                        type: 'CALL',
-                        ltp: row.calls.ltp,
-                        delta: row.calls.delta,
-                        iv: row.calls.iv,
-                      })
-                    }
-                    className={`py-2 px-2 text-right text-[10px] text-gray-400 cursor-pointer ${
+                    className={`py-2 px-2 text-right text-[10px] text-gray-400 ${
                       row.isCallITM ? 'bg-amber-500/5' : ''
                     }`}
                   >
                     ${row.calls.bid} / ${row.calls.ask}
                   </td>
                   <td
-                    onClick={() =>
-                      setPaperModal({
-                        strike: row.strike,
-                        type: 'CALL',
-                        ltp: row.calls.ltp,
-                        delta: row.calls.delta,
-                        iv: row.calls.iv,
-                      })
-                    }
-                    className={`py-2 px-3 text-right font-bold text-emerald-400 cursor-pointer ${
+                    className={`py-2 px-3 text-right font-bold text-emerald-400 ${
                       row.isCallITM ? 'bg-amber-500/10' : ''
                     }`}
                   >
                     ${row.calls.ltp.toLocaleString('en-US', { minimumFractionDigits: 2 })}
                   </td>
                   <td
-                    onClick={() =>
-                      setPaperModal({
-                        strike: row.strike,
-                        type: 'CALL',
-                        ltp: row.calls.ltp,
-                        delta: row.calls.delta,
-                        iv: row.calls.iv,
-                      })
-                    }
-                    className={`py-2 px-2 text-right text-[11px] border-r border-gray-800 cursor-pointer ${
+                    className={`py-2 px-2 text-right text-[11px] border-r border-gray-800 ${
                       row.calls.changePct >= 0 ? 'text-emerald-400' : 'text-rose-400'
                     } ${row.isCallITM ? 'bg-amber-500/5' : ''}`}
                   >
@@ -794,96 +648,42 @@ export default function OptionChain() {
 
                   {/* PUTS SIDE */}
                   <td
-                    onClick={() =>
-                      setPaperModal({
-                        strike: row.strike,
-                        type: 'PUT',
-                        ltp: row.puts.ltp,
-                        delta: row.puts.delta,
-                        iv: row.puts.iv,
-                      })
-                    }
-                    className={`py-2 px-2 text-left text-[11px] cursor-pointer ${
+                    className={`py-2 px-2 text-left text-[11px] ${
                       row.puts.changePct >= 0 ? 'text-emerald-400' : 'text-rose-400'
                     } ${row.isPutITM ? 'bg-amber-500/5' : ''}`}
                   >
                     {row.puts.changePct >= 0 ? '+' : ''}{row.puts.changePct}%
                   </td>
                   <td
-                    onClick={() =>
-                      setPaperModal({
-                        strike: row.strike,
-                        type: 'PUT',
-                        ltp: row.puts.ltp,
-                        delta: row.puts.delta,
-                        iv: row.puts.iv,
-                      })
-                    }
-                    className={`py-2 px-3 text-left font-bold text-rose-400 cursor-pointer ${
+                    className={`py-2 px-3 text-left font-bold text-rose-400 ${
                       row.isPutITM ? 'bg-amber-500/10' : ''
                     }`}
                   >
                     ${row.puts.ltp.toLocaleString('en-US', { minimumFractionDigits: 2 })}
                   </td>
                   <td
-                    onClick={() =>
-                      setPaperModal({
-                        strike: row.strike,
-                        type: 'PUT',
-                        ltp: row.puts.ltp,
-                        delta: row.puts.delta,
-                        iv: row.puts.iv,
-                      })
-                    }
-                    className={`py-2 px-2 text-left text-[10px] text-gray-400 cursor-pointer ${
+                    className={`py-2 px-2 text-left text-[10px] text-gray-400 ${
                       row.isPutITM ? 'bg-amber-500/5' : ''
                     }`}
                   >
                     ${row.puts.bid} / ${row.puts.ask}
                   </td>
                   <td
-                    onClick={() =>
-                      setPaperModal({
-                        strike: row.strike,
-                        type: 'PUT',
-                        ltp: row.puts.ltp,
-                        delta: row.puts.delta,
-                        iv: row.puts.iv,
-                      })
-                    }
-                    className={`py-2 px-2 text-left text-gray-400 cursor-pointer ${
+                    className={`py-2 px-2 text-left text-gray-400 ${
                       row.isPutITM ? 'bg-amber-500/5' : ''
                     }`}
                   >
                     {row.puts.delta}
                   </td>
                   <td
-                    onClick={() =>
-                      setPaperModal({
-                        strike: row.strike,
-                        type: 'PUT',
-                        ltp: row.puts.ltp,
-                        delta: row.puts.delta,
-                        iv: row.puts.iv,
-                      })
-                    }
-                    className={`py-2 px-2 text-left cursor-pointer ${
+                    className={`py-2 px-2 text-left ${
                       row.isPutITM ? 'bg-amber-500/5 text-gray-400' : 'text-gray-500'
                     }`}
                   >
                     {row.puts.iv}%
                   </td>
                   <td
-                    onClick={() =>
-                      setPaperModal({
-                        strike: row.strike,
-                        type: 'PUT',
-                        ltp: row.puts.ltp,
-                        delta: row.puts.delta,
-                        iv: row.puts.iv,
-                      })
-                    }
-                    className={`py-2 px-3 text-left cursor-pointer ${
+                    className={`py-2 px-3 text-left ${
                       row.isPutITM ? 'bg-amber-500/5 text-gray-300 font-semibold' : 'text-gray-400'
                     }`}
                   >
@@ -895,110 +695,6 @@ export default function OptionChain() {
           </table>
         </div>
       </div>
-
-      {/* Quick Paper Trade Modal */}
-      {paperModal && (
-        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-gray-900 border border-gray-800 rounded-3xl max-w-md w-full p-6 shadow-2xl relative">
-            <button
-              onClick={() => setPaperModal(null)}
-              className="absolute top-5 right-5 text-gray-400 hover:text-white text-lg cursor-pointer"
-            >
-              ✕
-            </button>
-
-            <div className="flex items-center gap-2 mb-2">
-              <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse"></span>
-              <span className="text-xs font-mono text-emerald-400 font-bold uppercase">
-                Paper Trading Simulation
-              </span>
-            </div>
-
-            <h3 className="text-xl font-extrabold text-white">
-              {paperModal.type === 'CALL' ? 'Buy Call Option' : 'Buy Put Option'}
-            </h3>
-            <p className="text-xs text-gray-400 mt-1">
-              Practicing order execution without risking real funds.
-            </p>
-
-            <form onSubmit={handleExecutePaperOption} className="mt-6 space-y-4">
-              <div className="bg-gray-950 border border-gray-800 p-4 rounded-xl space-y-2">
-                <div className="flex justify-between text-xs">
-                  <span className="text-gray-500">Contract</span>
-                  <span className="font-bold text-white font-mono">
-                    {selectedAsset} ${paperModal.strike} {paperModal.type}
-                  </span>
-                </div>
-                <div className="flex justify-between text-xs">
-                  <span className="text-gray-500">Expiry</span>
-                  <span className="text-gray-300 font-mono">{selectedExpiry.label}</span>
-                </div>
-                <div className="flex justify-between text-xs">
-                  <span className="text-gray-500">LTP Premium</span>
-                  <span className="text-emerald-400 font-bold font-mono">${paperModal.ltp}</span>
-                </div>
-                <div className="flex justify-between text-xs">
-                  <span className="text-gray-500">Delta / IV</span>
-                  <span className="text-gray-300 font-mono">{paperModal.delta} / {paperModal.iv}%</span>
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-xs font-semibold text-gray-400 mb-1.5">
-                  Contracts Quantity ({config.lotSize} {selectedAsset} each)
-                </label>
-                <div className="flex items-center gap-2">
-                  <button
-                    type="button"
-                    onClick={() => setOrderQuantity((q) => Math.max(1, q - 1))}
-                    className="w-10 h-10 rounded-xl bg-gray-800 hover:bg-gray-700 text-white font-bold cursor-pointer"
-                  >
-                    -
-                  </button>
-                  <input
-                    type="number"
-                    min="1"
-                    value={orderQuantity}
-                    onChange={(e) => setOrderQuantity(Math.max(1, Number(e.target.value)))}
-                    className="flex-1 bg-gray-950 border border-gray-800 rounded-xl px-4 py-2.5 text-center text-white font-mono font-bold focus:outline-none focus:border-emerald-500"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setOrderQuantity((q) => q + 1)}
-                    className="w-10 h-10 rounded-xl bg-gray-800 hover:bg-gray-700 text-white font-bold cursor-pointer"
-                  >
-                    +
-                  </button>
-                </div>
-              </div>
-
-              <div className="p-3 bg-gray-950 border border-gray-800 rounded-xl flex items-center justify-between text-xs">
-                <span className="text-gray-400">Total Paper Premium:</span>
-                <span className="text-base font-black font-mono text-emerald-400">
-                  ${(paperModal.ltp * orderQuantity).toLocaleString('en-US', { minimumFractionDigits: 2 })}
-                </span>
-              </div>
-
-              <div className="flex items-center gap-3 pt-2">
-                <button
-                  type="button"
-                  onClick={() => setPaperModal(null)}
-                  className="flex-1 py-3 rounded-xl border border-gray-800 text-gray-400 hover:text-white font-semibold text-xs transition-colors cursor-pointer"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  disabled={orderSubmitting}
-                  className="flex-1 py-3 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-gray-950 font-black text-xs transition-all shadow-lg shadow-emerald-500/20 cursor-pointer disabled:opacity-50"
-                >
-                  {orderSubmitting ? 'Filling...' : 'Confirm Paper Trade'}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

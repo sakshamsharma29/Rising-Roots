@@ -7,7 +7,18 @@ const JWT_SECRET = process.env.JWT_SECRET || 'rising_roots_secret_key_2026';
 
 export const registerUser = async (req, res) => {
   try {
-    const { name, email, password, role } = req.body;
+    const {
+      name,
+      email,
+      password,
+      role,
+      phone,
+      telegramUsername,
+      city,
+      state,
+      tradingExperience,
+      preferredMarket,
+    } = req.body;
 
     if (!name || !email || !password) {
       return res.status(400).json({ success: false, message: 'All fields are required.' });
@@ -28,6 +39,12 @@ export const registerUser = async (req, res) => {
       email: cleanEmail,
       passwordHash,
       role: userRole,
+      phone: phone || '',
+      telegramUsername: telegramUsername || '',
+      city: city || '',
+      state: state || '',
+      tradingExperience: tradingExperience || 'Intermediate',
+      preferredMarket: preferredMarket || 'All Markets',
     });
 
     // Always create a Member record for any user role
@@ -37,6 +54,12 @@ export const registerUser = async (req, res) => {
         await Member.create({
           name,
           email: cleanEmail,
+          phone: phone || '',
+          telegramUsername: telegramUsername || '',
+          city: city || '',
+          state: state || '',
+          tradingExperience: tradingExperience || 'Intermediate',
+          preferredMarket: preferredMarket || 'All Markets',
           plan: 'Pro Trader',
           status: 'Active',
           joinedDate: new Date(),
@@ -44,7 +67,16 @@ export const registerUser = async (req, res) => {
       }
     }
 
-    const payload = { id: newUser.id, name: newUser.name, email: newUser.email, role: newUser.role };
+    const payload = {
+      id: newUser.id,
+      name: newUser.name,
+      email: newUser.email,
+      role: newUser.role,
+      phone: newUser.phone,
+      telegramUsername: newUser.telegramUsername,
+      city: newUser.city,
+      preferredMarket: newUser.preferredMarket,
+    };
     const token = jwt.sign(payload, JWT_SECRET, { expiresIn: '7d' });
 
     res.status(201).json({ success: true, token, user: payload });
@@ -113,7 +145,16 @@ export const loginUser = async (req, res) => {
       }
     }
 
-    const payload = { id: user.id, name: user.name, email: user.email, role: user.role };
+    const payload = {
+      id: user.id,
+      name: user.name,
+      email: user.email,
+      role: user.role,
+      phone: user.phone || '',
+      telegramUsername: user.telegramUsername || '',
+      city: user.city || '',
+      preferredMarket: user.preferredMarket || 'All Markets',
+    };
     const token = jwt.sign(payload, JWT_SECRET, { expiresIn: '7d' });
 
     res.json({ success: true, token, user: payload });

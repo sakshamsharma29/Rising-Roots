@@ -72,6 +72,18 @@ const historicalTradeSchema = new mongoose.Schema(
       type: String,
       default: () => 'RR-TX-' + Math.random().toString(36).substring(2, 9).toUpperCase(),
     },
+    screenshotUrl: {
+      type: String,
+      default: '',
+    },
+    brokerName: {
+      type: String,
+      default: 'Delta Exchange',
+    },
+    verifiedProfit: {
+      type: String,
+      default: '',
+    },
     rationale: {
       type: String,
       default: '',

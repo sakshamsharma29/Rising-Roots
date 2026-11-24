@@ -2,472 +2,261 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { getGlobalMarketStatus } from '../utils/marketHours';
 
-// Default initial asset lists
-const DEFAULT_CRYPTO_ASSETS = [
-  { symbol: 'BTCUSDT', name: 'Bitcoin', type: 'crypto', spot: 64520.00, change: 1120.40, changePct: 1.76, high: 65100.00, low: 63200.00, volume: '38,420 BTC', lotSize: 0.01 },
-  { symbol: 'ETHUSDT', name: 'Ethereum', type: 'crypto', spot: 2655.40, change: 48.20, changePct: 1.85, high: 2690.00, low: 2580.00, volume: '240,110 ETH', lotSize: 0.1 },
-  { symbol: 'SOLUSDT', name: 'Solana', type: 'crypto', spot: 154.80, change: -2.40, changePct: -1.53, high: 159.20, low: 151.00, volume: '1,420,000 SOL', lotSize: 1 },
-  { symbol: 'BNBUSDT', name: 'Binance Coin', type: 'crypto', spot: 588.60, change: 8.90, changePct: 1.54, high: 595.00, low: 576.00, volume: '320,400 BNB', lotSize: 0.5 },
-  { symbol: 'XRPUSDT', name: 'Ripple', type: 'crypto', spot: 0.5840, change: 0.0140, changePct: 2.45, high: 0.5980, low: 0.5650, volume: '45,000,000 XRP', lotSize: 50 },
-  { symbol: 'DOGEUSDT', name: 'Dogecoin', type: 'crypto', spot: 0.1245, change: 0.0042, changePct: 3.49, high: 0.1290, low: 0.1180, volume: '98,000,000 DOGE', lotSize: 100 },
-  { symbol: 'ADAUSDT', name: 'Cardano', type: 'crypto', spot: 0.3540, change: -0.0060, changePct: -1.67, high: 0.3680, low: 0.3470, volume: '18,500,000 ADA', lotSize: 50 },
-  { symbol: 'AVAXUSDT', name: 'Avalanche', type: 'crypto', spot: 28.40, change: 0.85, changePct: 3.09, high: 29.20, low: 27.10, volume: '840,000 AVAX', lotSize: 2 },
+// Institutional 7 Core Assets specified by Client + Major FX
+const FEATURED_CHART_ASSETS = [
+  {
+    symbol: 'BTCUSDT',
+    displayName: 'Bitcoin (BTC/USDT)',
+    tvSymbol: 'BINANCE:BTCUSDT',
+    category: 'crypto',
+    badge: 'Crypto 24/7',
+    icon: '₿',
+    exchange: 'Delta / Binance',
+    spot: 64650.00,
+    changePct: 1.76,
+    high: 65420.00,
+    low: 63890.00,
+    bias: 'Bullish Momentum',
+    s1: '$63,800',
+    s2: '$62,400',
+    r1: '$65,800',
+    r2: '$67,200',
+    strategy: '15M Demand Zone Retest with 1:3.0 R:R',
+  },
+  {
+    symbol: 'ETHUSDT',
+    displayName: 'Ethereum (ETH/USDT)',
+    tvSymbol: 'BINANCE:ETHUSDT',
+    category: 'crypto',
+    badge: 'Crypto 24/7',
+    icon: 'Ξ',
+    exchange: 'Delta / Binance',
+    spot: 2680.40,
+    changePct: 2.15,
+    high: 2710.00,
+    low: 2610.00,
+    bias: 'Bullish Breakout',
+    s1: '$2,620',
+    s2: '$2,550',
+    r1: '$2,740',
+    r2: '$2,850',
+    strategy: 'Continuation Long above $2,650 Resistance',
+  },
+  {
+    symbol: 'SOLUSDT',
+    displayName: 'Solana (SOL/USDT)',
+    tvSymbol: 'BINANCE:SOLUSDT',
+    category: 'crypto',
+    badge: 'Crypto 24/7',
+    icon: '◎',
+    exchange: 'Delta / Binance',
+    spot: 156.20,
+    changePct: -0.85,
+    high: 159.80,
+    low: 152.40,
+    bias: 'Range Accumulation',
+    s1: '$150.00',
+    s2: '$144.50',
+    r1: '$162.00',
+    r2: '$170.00',
+    strategy: 'Range Low Sweep & Reclaim Play',
+  },
+  {
+    symbol: 'XAUUSD',
+    displayName: 'Spot Gold (XAU/USD)',
+    tvSymbol: 'TVC:GOLD',
+    category: 'commodity',
+    badge: 'Precious Metals',
+    icon: '🥇',
+    exchange: 'Global Spot',
+    spot: 2688.50,
+    changePct: 0.74,
+    high: 2694.20,
+    low: 2673.10,
+    bias: 'Strong Bullish',
+    s1: '$2,670',
+    s2: '$2,652',
+    r1: '$2,710',
+    r2: '$2,735',
+    strategy: 'Macro Yield Invalidation Dip Buying',
+  },
+  {
+    symbol: 'XAGUSD',
+    displayName: 'Spot Silver (XAG/USD)',
+    tvSymbol: 'TVC:SILVER',
+    category: 'commodity',
+    badge: 'Precious Metals',
+    icon: '🥈',
+    exchange: 'Global Spot',
+    spot: 31.55,
+    changePct: 1.28,
+    high: 31.95,
+    low: 31.05,
+    bias: 'Bullish Expansion',
+    s1: '$31.10',
+    s2: '$30.40',
+    r1: '$32.40',
+    r2: '$33.20',
+    strategy: 'High Volume Trendline Breakout',
+  },
+  {
+    symbol: 'NIFTY',
+    displayName: 'NIFTY 50 Index (NSE)',
+    tvSymbol: 'NSE:NIFTY',
+    category: 'indices',
+    badge: 'Indian Benchmark',
+    icon: '🇮🇳',
+    exchange: 'National Stock Exchange (NSE)',
+    spot: 24385.00,
+    changePct: 0.52,
+    high: 24460.00,
+    low: 24310.00,
+    bias: 'Bullish Continuation',
+    s1: '24,250',
+    s2: '24,100',
+    r1: '24,550',
+    r2: '24,700',
+    strategy: 'Intraday Call Buying on 20-EMA Pullback',
+  },
+  {
+    symbol: 'SENSEX',
+    displayName: 'BSE SENSEX Index',
+    tvSymbol: 'BSE:SENSEX',
+    category: 'indices',
+    badge: 'Indian Benchmark',
+    icon: '🇮🇳',
+    exchange: 'Bombay Stock Exchange (BSE)',
+    spot: 80280.00,
+    changePct: 0.46,
+    high: 80510.00,
+    low: 80020.00,
+    bias: 'Institutional Accumulation',
+    s1: '79,800',
+    s2: '79,200',
+    r1: '80,800',
+    r2: '81,500',
+    strategy: 'Largecap Financial Momentum Setup',
+  },
 ];
 
-const DEFAULT_FOREX_ASSETS = [
-  { symbol: 'EUR/USD', name: 'Euro / US Dollar', type: 'forex', spot: 1.0845, change: 0.0018, changePct: 0.17, high: 1.0870, low: 1.0820, volume: 'Daily $5.1T', lotSize: 1000 },
-  { symbol: 'GBP/USD', name: 'British Pound / USD', type: 'forex', spot: 1.3025, change: -0.0024, changePct: -0.18, high: 1.3065, low: 1.2990, volume: 'Daily $2.4T', lotSize: 1000 },
-  { symbol: 'USD/JPY', name: 'USD / Japanese Yen', type: 'forex', spot: 153.40, change: 0.65, changePct: 0.43, high: 153.90, low: 152.60, volume: 'Daily $1.8T', lotSize: 1000 },
-  { symbol: 'AUD/USD', name: 'Australian Dollar / USD', type: 'forex', spot: 0.6680, change: 0.0012, changePct: 0.18, high: 0.6710, low: 0.6650, volume: 'Daily $900B', lotSize: 1000 },
-  { symbol: 'USD/CAD', name: 'USD / Canadian Dollar', type: 'forex', spot: 1.3850, change: -0.0015, changePct: -0.11, high: 1.3880, low: 1.3830, volume: 'Daily $750B', lotSize: 1000 },
-  { symbol: 'USD/CHF', name: 'USD / Swiss Franc', type: 'forex', spot: 0.8650, change: 0.0008, changePct: 0.09, high: 0.8680, low: 0.8620, volume: 'Daily $520B', lotSize: 1000 },
-  { symbol: 'GBP/JPY', name: 'British Pound / Yen', type: 'forex', spot: 199.80, change: 0.45, changePct: 0.23, high: 200.50, low: 199.10, volume: 'Daily $480B', lotSize: 1000 },
-  { symbol: 'EUR/GBP', name: 'Euro / British Pound', type: 'forex', spot: 0.8325, change: 0.0022, changePct: 0.26, high: 0.8350, low: 0.8300, volume: 'Daily $410B', lotSize: 1000 },
+const FOREX_WATCHLIST = [
+  { symbol: 'EUR/USD', displayName: 'Euro / US Dollar', tvSymbol: 'FX:EURUSD', spot: 1.0845, changePct: 0.17, high: 1.0870, low: 1.0820, category: 'forex' },
+  { symbol: 'GBP/USD', displayName: 'British Pound / USD', tvSymbol: 'FX:GBPUSD', spot: 1.3025, changePct: -0.18, high: 1.3065, low: 1.2990, category: 'forex' },
+  { symbol: 'USD/JPY', displayName: 'USD / Japanese Yen', tvSymbol: 'FX:USDJPY', spot: 153.40, changePct: 0.43, high: 153.90, low: 152.60, category: 'forex' },
+  { symbol: 'AUD/USD', displayName: 'Australian Dollar / USD', tvSymbol: 'FX:AUDUSD', spot: 0.6680, changePct: 0.18, high: 0.6710, low: 0.6650, category: 'forex' },
 ];
 
 export default function TradingTerminal() {
   const API_URL = import.meta.env.VITE_API_URL || (import.meta.env.DEV ? 'http://localhost:5000' : '');
-  const token = localStorage.getItem('rr_token');
-  const headers = useMemo(
-    () => ({
-      'Content-Type': 'application/json',
-      ...(token && { Authorization: `Bearer ${token}` }),
-    }),
-    [token]
-  );
+  const [searchParams] = useSearchParams();
 
-  // Global Market Status (24/7 Crypto + 24/5 Forex)
+  // Selected asset & timeframe
+  const [selectedAsset, setSelectedAsset] = useState(FEATURED_CHART_ASSETS[0]);
+  const [timeframe, setTimeframe] = useState('15m');
+  const [activeCategory, setActiveCategory] = useState('all'); // 'all' | 'crypto' | 'commodity' | 'indices' | 'forex'
+  const [searchQuery, setSearchQuery] = useState('');
+
+  // Global Market Sessions Status
   const [marketStatus, setMarketStatus] = useState(getGlobalMarketStatus());
   useEffect(() => {
-    const timer = setInterval(() => {
-      setMarketStatus(getGlobalMarketStatus());
-    }, 1000);
+    const timer = setInterval(() => setMarketStatus(getGlobalMarketStatus()), 1000);
     return () => clearInterval(timer);
   }, []);
 
-  // Watchlist state
-  const [searchParams] = useSearchParams();
-  const [cryptoAssets, setCryptoAssets] = useState(DEFAULT_CRYPTO_ASSETS);
-  const [forexAssets, setForexAssets] = useState(DEFAULT_FOREX_ASSETS);
-  const [activeTab, setActiveTab] = useState('crypto'); // 'crypto' | 'forex' | 'all'
-  const [searchQuery, setSearchQuery] = useState('');
-  const [selectedAsset, setSelectedAsset] = useState(DEFAULT_CRYPTO_ASSETS[0]);
-  const [tickDirection, setTickDirection] = useState({});
+  // Live Crypto Tickers from Delta Exchange API
+  const [cryptoSpotMap, setCryptoSpotMap] = useState({});
 
-  // Auto-select asset from URL query param if arriving from VIP Signals room
   useEffect(() => {
-    const symbolParam = searchParams.get('symbol');
-    if (symbolParam) {
-      const cleanParam = symbolParam.replace(/[^A-Za-z0-9]/g, '').toUpperCase();
-      const match = [...DEFAULT_CRYPTO_ASSETS, ...DEFAULT_FOREX_ASSETS].find(
-        (a) => a.symbol.replace(/[^A-Za-z0-9]/g, '').toUpperCase() === cleanParam
-      );
-      if (match) {
-        setSelectedAsset(match);
-        setActiveTab(match.type);
-      }
-    }
-  }, [searchParams]);
-
-  // Chart Timeframe & Points
-  const [timeframe, setTimeframe] = useState('15m');
-  const [chartData, setChartData] = useState([]);
-
-  // Paper Margin Balance ($10,000 USD virtual funds)
-  const [paperMargin, setPaperMargin] = useState(() => {
-    const saved = localStorage.getItem('rr_paper_margin_usd');
-    return saved !== null ? Number(saved) : 10000;
-  });
-
-  const resetPaperMargin = () => {
-    setPaperMargin(10000);
-    localStorage.setItem('rr_paper_margin_usd', '10000');
-    setOrderStatusToast({ type: 'success', message: 'Demo margin balance reset to $10,000.00 USD.' });
-    setTimeout(() => setOrderStatusToast(null), 3000);
-  };
-
-  // Order Execution Form State
-  const [orderSide, setOrderSide] = useState('long'); // 'long' (BUY) | 'short' (SELL)
-  const [orderType, setOrderType] = useState('market'); // 'market' | 'limit'
-  const [limitPrice, setLimitPrice] = useState('');
-  const [quantity, setQuantity] = useState(0.1);
-  const [stopLoss, setStopLoss] = useState('');
-  const [takeProfit, setTakeProfit] = useState('');
-  const [orderSubmitting, setOrderSubmitting] = useState(false);
-  const [orderStatusToast, setOrderStatusToast] = useState(null);
-
-  // Database Trades & Positions
-  const [openPositions, setOpenPositions] = useState([]);
-  const [closedTrades, setClosedTrades] = useState([]);
-  const [activeBottomTab, setActiveBottomTab] = useState('positions');
-  const [loadingTrades, setLoadingTrades] = useState(false);
-
-  // Combined Watchlist
-  const allAssets = useMemo(() => {
-    return [...cryptoAssets, ...forexAssets];
-  }, [cryptoAssets, forexAssets]);
-
-  const filteredAssets = useMemo(() => {
-    let list = allAssets;
-    if (activeTab === 'crypto') list = cryptoAssets;
-    if (activeTab === 'forex') list = forexAssets;
-
-    if (searchQuery.trim()) {
-      const q = searchQuery.toLowerCase();
-      list = list.filter((a) => a.symbol.toLowerCase().includes(q) || a.name.toLowerCase().includes(q));
-    }
-    return list;
-  }, [allAssets, cryptoAssets, forexAssets, activeTab, searchQuery]);
-
-  // Adjust default quantity when switching between crypto and forex
-  useEffect(() => {
-    if (selectedAsset.type === 'crypto') {
-      if (selectedAsset.symbol.startsWith('BTC')) setQuantity(0.1);
-      else if (selectedAsset.symbol.startsWith('ETH')) setQuantity(1);
-      else if (selectedAsset.symbol.startsWith('SOL')) setQuantity(5);
-      else setQuantity(10);
-    } else {
-      setQuantity(1000); // Standard micro-lot in forex
-    }
-    if (orderType === 'limit') {
-      setLimitPrice(selectedAsset.spot.toString());
-    }
-  }, [selectedAsset.symbol]);
-
-  // Fetch real-time Crypto tickers from Delta Exchange API (with Binance fallback)
-  useEffect(() => {
-    let isMounted = true;
-
-    const fetchCrypto = async () => {
-      // 1. Try Delta Exchange Live Tickers proxy endpoint
+    let isSubscribed = true;
+    const fetchDeltaTickers = async () => {
       try {
         const res = await fetch(`${API_URL}/api/delta/tickers`);
         const json = await res.json();
-        if (isMounted && json.success && Array.isArray(json.data) && json.data.length > 0) {
+        if (isSubscribed && json.success && Array.isArray(json.data)) {
           const map = {};
           json.data.forEach((item) => {
             map[item.symbol] = {
               spot: item.spot,
-              change: item.change,
               changePct: item.changePct,
               high: item.high,
               low: item.low,
-              volume: item.volume,
             };
           });
-
-          setCryptoAssets((prev) =>
-            prev.map((asset) => {
-              const live = map[asset.symbol];
-              if (!live) return asset;
-
-              const diff = live.spot - asset.spot;
-              if (diff !== 0) {
-                setTickDirection((td) => ({ ...td, [asset.symbol]: diff > 0 ? 'up' : 'down' }));
-              }
-
-              return {
-                ...asset,
-                spot: live.spot,
-                change: live.change,
-                changePct: live.changePct,
-                high: live.high,
-                low: live.low,
-                volume: live.volume,
-              };
-            })
-          );
-          return;
-        }
-      } catch (err) {
-        // Delta proxy unreachable, fallback to Binance
-      }
-
-      // 2. Binance Public Ticker Fallback
-      try {
-        const symbols = ['BTCUSDT', 'ETHUSDT', 'SOLUSDT', 'BNBUSDT', 'XRPUSDT', 'DOGEUSDT', 'ADAUSDT', 'AVAXUSDT'];
-        const res = await fetch('https://api.binance.com/api/v3/ticker/24hr');
-        const data = await res.json();
-        if (isMounted && Array.isArray(data)) {
-          const map = {};
-          data.forEach((item) => {
-            if (symbols.includes(item.symbol)) {
-              map[item.symbol] = {
-                spot: parseFloat(item.lastPrice),
-                change: parseFloat(item.priceChange),
-                changePct: parseFloat(item.priceChangePercent),
-                high: parseFloat(item.highPrice),
-                low: parseFloat(item.lowPrice),
-                volume: `${Math.round(parseFloat(item.volume)).toLocaleString()} ${item.symbol.replace('USDT', '')}`,
-              };
-            }
-          });
-
-          setCryptoAssets((prev) =>
-            prev.map((asset) => {
-              const live = map[asset.symbol];
-              if (!live) return asset;
-
-              const diff = live.spot - asset.spot;
-              if (diff !== 0) {
-                setTickDirection((td) => ({ ...td, [asset.symbol]: diff > 0 ? 'up' : 'down' }));
-              }
-
-              return {
-                ...asset,
-                spot: live.spot,
-                change: live.change,
-                changePct: live.changePct,
-                high: live.high,
-                low: live.low,
-                volume: live.volume,
-              };
-            })
-          );
-        }
-      } catch (err) {
-        // Silent fallback to standard intervals
-      }
-    };
-
-    fetchCrypto();
-    const interval = setInterval(fetchCrypto, 3500); // Live poll every 3.5s
-    return () => {
-      isMounted = false;
-      clearInterval(interval);
-    };
-  }, [API_URL]);
-
-  // Fetch real-time Forex exchange rates
-  useEffect(() => {
-    const fetchForex = async () => {
-      try {
-        const res = await fetch('https://open.er-api.com/v6/latest/USD');
-        const data = await res.json();
-        if (data && data.rates) {
-          const rates = data.rates;
-          const eurusd = rates.EUR ? parseFloat((1 / rates.EUR).toFixed(4)) : 1.0845;
-          const gbpusd = rates.GBP ? parseFloat((1 / rates.GBP).toFixed(4)) : 1.3025;
-          const usdjpy = rates.JPY ? parseFloat(rates.JPY.toFixed(2)) : 153.40;
-          const audusd = rates.AUD ? parseFloat((1 / rates.AUD).toFixed(4)) : 0.6680;
-          const usdcad = rates.CAD ? parseFloat(rates.CAD.toFixed(4)) : 1.3850;
-          const usdchf = rates.CHF ? parseFloat(rates.CHF.toFixed(4)) : 0.8650;
-          const gbpjpy = rates.JPY && rates.GBP ? parseFloat((rates.JPY / rates.GBP).toFixed(2)) : 199.80;
-          const eurgbp = rates.EUR && rates.GBP ? parseFloat((rates.GBP / rates.EUR).toFixed(4)) : 0.8325;
-
-          const forexMap = {
-            'EUR/USD': eurusd,
-            'GBP/USD': gbpusd,
-            'USD/JPY': usdjpy,
-            'AUD/USD': audusd,
-            'USD/CAD': usdcad,
-            'USD/CHF': usdchf,
-            'GBP/JPY': gbpjpy,
-            'EUR/GBP': eurgbp,
-          };
-
-          setForexAssets((prev) =>
-            prev.map((asset) => {
-              const newSpot = forexMap[asset.symbol];
-              if (!newSpot) return asset;
-              const diff = parseFloat((newSpot - asset.spot).toFixed(4));
-              return {
-                ...asset,
-                spot: newSpot,
-                change: diff,
-                changePct: parseFloat(((diff / asset.spot) * 100).toFixed(2)),
-              };
-            })
-          );
+          setCryptoSpotMap(map);
         }
       } catch (err) {}
     };
 
-    fetchForex();
-    const interval = setInterval(fetchForex, 15000); // Forex rates update every 15s
-    return () => clearInterval(interval);
-  }, []);
-
-  // Update selected asset reference when watchlist refreshes
-  useEffect(() => {
-    const updated = allAssets.find((a) => a.symbol === selectedAsset.symbol);
-    if (updated && updated.spot !== selectedAsset.spot) {
-      setSelectedAsset(updated);
-    }
-  }, [allAssets, selectedAsset.symbol]);
-
-  // Generate interactive chart data based on spot price
-  useEffect(() => {
-    const base = selectedAsset.spot;
-    const points = [];
-    let current = base * 0.985;
-    for (let i = 0; i < 30; i++) {
-      const delta = (Math.sin(i * 0.45) * (base * 0.003)) + ((Math.random() - 0.48) * (base * 0.002));
-      current = current + delta;
-      points.push({
-        idx: i,
-        price: parseFloat(current.toFixed(selectedAsset.type === 'crypto' && base > 10 ? 2 : 4)),
-      });
-    }
-    points.push({ idx: 30, price: selectedAsset.spot });
-    setChartData(points);
-  }, [selectedAsset.symbol]);
-
-  // Margin Required calculation for order form
-  const totalMarginRequired = useMemo(() => {
-    const execPrice = orderType === 'limit' && limitPrice ? Number(limitPrice) : selectedAsset.spot;
-    if (selectedAsset.type === 'forex') {
-      // 1:50 leverage standard for paper forex trading
-      return parseFloat(((execPrice * Number(quantity)) / 50).toFixed(2));
-    }
-    // Spot crypto (1:1 paper margin or 1:5)
-    return parseFloat((execPrice * Number(quantity)).toFixed(2));
-  }, [selectedAsset, orderType, limitPrice, quantity]);
-
-  // Fetch real trades from MongoDB
-  const fetchTrades = () => {
-    setLoadingTrades(true);
-    fetch(`${API_URL}/api/trades`, { headers })
-      .then((res) => res.json())
-      .then((resData) => {
-        if (resData.success && Array.isArray(resData.data)) {
-          const open = resData.data.filter((t) => t.exitPrice === null);
-          const closed = resData.data.filter((t) => t.exitPrice !== null);
-          setOpenPositions(open);
-          setClosedTrades(closed);
-        }
-      })
-      .catch(() => {})
-      .finally(() => setLoadingTrades(false));
-  };
-
-  useEffect(() => {
-    fetchTrades();
-  }, []);
-
-  // Real-time floating P&L calculation for an open position
-  const calculatePositionMetrics = (pos) => {
-    const match = allAssets.find((a) => a.symbol === pos.symbol) || { spot: pos.entryPrice };
-    const currentPrice = match.spot;
-    const isLong = pos.tradeType === 'long';
-    const priceDiff = isLong ? currentPrice - pos.entryPrice : pos.entryPrice - currentPrice;
-    const pnl = parseFloat((priceDiff * pos.quantity).toFixed(2));
-    const pnlPercent = parseFloat(((priceDiff / pos.entryPrice) * 100).toFixed(2));
-
-    return { currentPrice, pnl, pnlPercent };
-  };
-
-  // Place Paper Order
-  const handleExecuteOrder = async (e) => {
-    e.preventDefault();
-    if (orderSubmitting) return;
-
-    if (paperMargin < totalMarginRequired) {
-      setOrderStatusToast({
-        type: 'error',
-        message: `Insufficient Margin! Required: $${totalMarginRequired.toLocaleString()}, Available: $${paperMargin.toLocaleString()}`,
-      });
-      setTimeout(() => setOrderStatusToast(null), 4000);
-      return;
-    }
-
-    setOrderSubmitting(true);
-
-    const execPrice = orderType === 'limit' && limitPrice ? Number(limitPrice) : selectedAsset.spot;
-
-    const payload = {
-      symbol: selectedAsset.symbol,
-      assetType: selectedAsset.type,
-      tradeType: orderSide,
-      entryPrice: execPrice,
-      quantity: Number(quantity),
-      stopLoss: stopLoss ? Number(stopLoss) : null,
-      target: takeProfit ? Number(takeProfit) : null,
-      notes: `Paper execution on ${selectedAsset.type.toUpperCase()}`,
-      tags: ['paper-trade', selectedAsset.type, orderSide],
+    fetchDeltaTickers();
+    const interval = setInterval(fetchDeltaTickers, 4000);
+    return () => {
+      isSubscribed = false;
+      clearInterval(interval);
     };
+  }, [API_URL]);
 
-    try {
-      const res = await fetch(`${API_URL}/api/trades`, {
-        method: 'POST',
-        headers,
-        body: JSON.stringify(payload),
-      });
-      const data = await res.json();
-
-      if (data.success) {
-        const newMargin = Math.max(0, paperMargin - totalMarginRequired);
-        setPaperMargin(newMargin);
-        localStorage.setItem('rr_paper_margin_usd', newMargin.toString());
-
-        setOrderStatusToast({
-          type: 'success',
-          message: `Paper Order Filled! ${orderSide.toUpperCase()} ${quantity} ${selectedAsset.symbol} @ $${execPrice}`,
-        });
-        fetchTrades();
-      } else {
-        setOrderStatusToast({
-          type: 'error',
-          message: data.message || 'Failed to place paper order.',
-        });
-      }
-    } catch (err) {
-      setOrderStatusToast({ type: 'error', message: 'Network error executing order.' });
-    } finally {
-      setOrderSubmitting(false);
-      setTimeout(() => setOrderStatusToast(null), 4500);
+  // Handle URL query param (e.g. arriving from VIP signals)
+  useEffect(() => {
+    const sym = searchParams.get('symbol');
+    if (sym) {
+      const clean = sym.replace(/[^A-Za-z0-9]/g, '').toUpperCase();
+      const match = [...FEATURED_CHART_ASSETS, ...FOREX_WATCHLIST].find(
+        (a) => a.symbol.replace(/[^A-Za-z0-9]/g, '').toUpperCase() === clean
+      );
+      if (match) setSelectedAsset(match);
     }
+  }, [searchParams]);
+
+  // Combined Watchlist
+  const allAssets = useMemo(() => {
+    return [...FEATURED_CHART_ASSETS, ...FOREX_WATCHLIST].map((item) => {
+      const live = cryptoSpotMap[item.symbol];
+      if (live) {
+        return {
+          ...item,
+          spot: live.spot,
+          changePct: live.changePct,
+          high: live.high || item.high,
+          low: live.low || item.low,
+        };
+      }
+      return item;
+    });
+  }, [cryptoSpotMap]);
+
+  // Filtered Assets
+  const filteredAssets = useMemo(() => {
+    let list = allAssets;
+    if (activeCategory !== 'all') {
+      list = list.filter((a) => a.category === activeCategory);
+    }
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase().trim();
+      list = list.filter(
+        (a) => a.symbol.toLowerCase().includes(q) || a.displayName.toLowerCase().includes(q)
+      );
+    }
+    return list;
+  }, [allAssets, activeCategory, searchQuery]);
+
+  // Interval mapping for TradingView Embed
+  const intervalMap = {
+    '1m': '1',
+    '5m': '5',
+    '15m': '15',
+    '1h': '60',
+    '4h': '240',
+    '1D': 'D',
   };
 
-  // Square Off / Close Open Position
-  const handleSquareOff = async (position) => {
-    const metrics = calculatePositionMetrics(position);
-    try {
-      const res = await fetch(`${API_URL}/api/trades/${position.id || position._id}/close`, {
-        method: 'PATCH',
-        headers,
-        body: JSON.stringify({ exitPrice: metrics.currentPrice }),
-      });
-      const data = await res.json();
-
-      if (data.success) {
-        // Return margin + realized P&L
-        const returnedCapital = (position.entryPrice * position.quantity) + metrics.pnl;
-        const newMargin = Math.max(0, paperMargin + returnedCapital);
-        setPaperMargin(newMargin);
-        localStorage.setItem('rr_paper_margin_usd', newMargin.toString());
-
-        setOrderStatusToast({
-          type: 'success',
-          message: `Closed ${position.symbol}! Realized P&L: ${metrics.pnl >= 0 ? '+$' : '-$'}${Math.abs(metrics.pnl)}`,
-        });
-        fetchTrades();
-      } else {
-        setOrderStatusToast({ type: 'error', message: data.message || 'Square-off failed.' });
-      }
-    } catch (err) {
-      setOrderStatusToast({ type: 'error', message: 'Failed to square off position.' });
-    } finally {
-      setTimeout(() => setOrderStatusToast(null), 4500);
-    }
-  };
-
-  // Chart SVG path generator
-  const minPrice = chartData.length > 0 ? Math.min(...chartData.map((d) => d.price)) : 0;
-  const maxPrice = chartData.length > 0 ? Math.max(...chartData.map((d) => d.price)) : 1;
-  const range = maxPrice - minPrice || 1;
-
-  const chartPoints = chartData
-    .map((d, i) => {
-      const x = (i / (chartData.length - 1)) * 600;
-      const y = 200 - ((d.price - minPrice) / range) * 160 - 20;
-      return `${x},${y}`;
-    })
-    .join(' ');
+  const tvInterval = intervalMap[timeframe] || '15';
+  const tvWidgetUrl = `https://s.tradingview.com/widgetembed/?symbol=${encodeURIComponent(
+    selectedAsset.tvSymbol
+  )}&interval=${tvInterval}&theme=dark&style=1&timezone=Asia%2FKolkata&studies=%5B%5D&hide_side_toolbar=0&allow_symbol_change=1&save_image=0&locale=en`;
 
   return (
     <div className="space-y-6 max-w-7xl mx-auto pb-12">
-      {/* Top Banner: Global Market Sessions & Option Chain Link */}
+      {/* Top Banner: Global Market Status & Quick Actions */}
       <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4 bg-gray-900 border border-gray-800 p-4 rounded-2xl shadow-xl">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-xl bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center text-emerald-400 font-black text-xl shrink-0">
@@ -475,62 +264,259 @@ export default function TradingTerminal() {
           </div>
           <div>
             <div className="flex flex-wrap items-center gap-2">
-              <span className="font-extrabold text-sm text-white">DELTA EXCHANGE • 24/7 LIVE FEED</span>
+              <span className="font-extrabold text-sm text-white">MULTI-ASSET LIVE TERMINAL</span>
+              <span className="text-gray-600">•</span>
+              <span className="text-xs font-mono text-emerald-400 font-bold">
+                BTC, ETH, SOL, GOLD, SILVER, NIFTY & SENSEX
+              </span>
               <span className="text-gray-600">•</span>
               <span className={`text-xs font-mono font-bold px-2 py-0.5 rounded-full border ${marketStatus.forex.badgeClass}`}>
                 {marketStatus.forex.statusText}
               </span>
             </div>
             <p className="text-xs text-gray-400 mt-0.5 font-mono">
-              UTC Clock: {marketStatus.utcTimeString} | Local: {marketStatus.localTimeString}
+              Market Clock: UTC {marketStatus.utcTimeString} | IST {marketStatus.localTimeString}
             </p>
           </div>
         </div>
 
-        {/* Paper Margin and Option Chain quick CTA */}
         <div className="flex flex-wrap items-center gap-3 w-full lg:w-auto justify-end">
-          <div className="bg-gray-950 border border-gray-800 px-4 py-2 rounded-xl flex items-center gap-3">
-            <div>
-              <span className="text-[10px] text-gray-500 uppercase font-bold block">Paper Demo Balance</span>
-              <span className="text-base font-black font-mono text-emerald-400">
-                ${paperMargin.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-              </span>
-            </div>
-            <button
-              onClick={resetPaperMargin}
-              title="Reset balance to $10,000"
-              className="text-xs bg-gray-800 hover:bg-gray-700 text-gray-300 px-2 py-1 rounded cursor-pointer transition-colors"
-            >
-              Reset
-            </button>
-          </div>
+          <Link
+            to="/history"
+            className="bg-gray-800 hover:bg-gray-700 text-white font-bold px-4 py-2.5 rounded-xl text-xs transition-colors flex items-center gap-1.5"
+          >
+            <span>🏆</span> Performance Track Record
+          </Link>
 
           <Link
             to="/dashboard/options"
-            className="bg-emerald-500 hover:bg-emerald-400 text-gray-950 font-black px-4 py-2.5 rounded-xl text-xs transition-all shadow-lg shadow-emerald-500/20 flex items-center gap-1.5 cursor-pointer"
+            className="bg-amber-500 hover:bg-amber-400 text-gray-950 font-black px-4 py-2.5 rounded-xl text-xs transition-all shadow-lg shadow-amber-500/20 flex items-center gap-1.5 cursor-pointer"
           >
-            <span>📈</span> Crypto Option Chain
+            <span>📈</span> Delta Option Chain
           </Link>
         </div>
       </div>
 
-      {/* Main Terminal Grid: Watchlist (Left) + Chart & Ticket (Center/Right) */}
+      {/* 7 Core Client-Requested Asset Selector Bar */}
+      <div className="bg-gray-900 border border-gray-800 p-3 rounded-2xl shadow-lg">
+        <div className="flex items-center justify-between mb-2">
+          <span className="text-xs font-mono font-bold text-gray-400 uppercase tracking-wider">
+            Client Core Markets: 1-Click Live Chart Switcher
+          </span>
+          <span className="text-[10px] font-mono text-emerald-400 font-bold">
+            TRADINGVIEW LIVE CANDLESTICKS
+          </span>
+        </div>
+
+        <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-2">
+          {FEATURED_CHART_ASSETS.map((asset) => {
+            const isSelected = selectedAsset.symbol === asset.symbol;
+            return (
+              <button
+                key={asset.symbol}
+                onClick={() => setSelectedAsset(asset)}
+                className={`p-2.5 rounded-xl text-left transition-all cursor-pointer flex flex-col justify-between ${
+                  isSelected
+                    ? 'bg-emerald-500 text-gray-950 shadow-md shadow-emerald-500/20 font-bold'
+                    : 'bg-gray-950 hover:bg-gray-800 text-gray-300 border border-gray-800'
+                }`}
+              >
+                <div className="flex items-center justify-between">
+                  <span className="text-base">{asset.icon}</span>
+                  <span className={`text-[10px] font-mono font-bold ${
+                    isSelected ? 'text-gray-900' : asset.changePct >= 0 ? 'text-emerald-400' : 'text-rose-400'
+                  }`}>
+                    {asset.changePct >= 0 ? '+' : ''}{asset.changePct.toFixed(2)}%
+                  </span>
+                </div>
+                <div className="mt-1">
+                  <div className={`text-xs font-black truncate ${isSelected ? 'text-gray-950' : 'text-white'}`}>
+                    {asset.symbol}
+                  </div>
+                  <div className={`text-[10px] font-mono truncate ${isSelected ? 'text-gray-900' : 'text-gray-400'}`}>
+                    {asset.spot >= 1000 ? `$${asset.spot.toLocaleString()}` : `$${asset.spot}`}
+                  </div>
+                </div>
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Main Terminal Layout: Chart (8 Cols) + Watchlist & Desk Analysis (4 Cols) */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-        {/* LEFT COLUMN: Watchlist (4 Cols) */}
-        <div className="lg:col-span-4 bg-gray-900 border border-gray-800 rounded-2xl p-4 flex flex-col h-[700px]">
-          {/* Watchlist Category Tabs */}
-          <div className="flex items-center justify-between mb-3 border-b border-gray-800 pb-3">
-            <div className="flex items-center gap-1">
+        {/* CHART SECTION (8 Cols) */}
+        <div className="lg:col-span-8 space-y-4">
+          <div className="bg-gray-900 border border-gray-800 rounded-3xl p-5 shadow-2xl">
+            {/* Header: Selected Asset Info & Timeframe Bar */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-4 border-b border-gray-800 gap-4">
+              <div>
+                <div className="flex items-center gap-2">
+                  <span className="text-2xl">{selectedAsset.icon || '📈'}</span>
+                  <h2 className="text-xl sm:text-2xl font-black text-white font-mono">
+                    {selectedAsset.displayName || selectedAsset.symbol}
+                  </h2>
+                  <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 font-bold uppercase">
+                    {selectedAsset.badge || selectedAsset.category}
+                  </span>
+                </div>
+
+                <div className="flex items-baseline gap-3 mt-1.5">
+                  <span className="text-3xl font-black font-mono text-white tracking-tight">
+                    {selectedAsset.spot >= 1000
+                      ? `$${selectedAsset.spot.toLocaleString('en-US', { minimumFractionDigits: 2 })}`
+                      : `$${selectedAsset.spot}`}
+                  </span>
+                  <span className={`text-sm font-bold font-mono ${selectedAsset.changePct >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
+                    {selectedAsset.changePct >= 0 ? '+' : ''}{selectedAsset.changePct.toFixed(2)}%
+                  </span>
+                  <span className="text-xs text-gray-500 font-mono">
+                    Feed: {selectedAsset.exchange || 'TradingView Real-Time'}
+                  </span>
+                </div>
+              </div>
+
+              {/* Timeframe Selector */}
+              <div className="flex items-center gap-1 bg-gray-950 p-1 rounded-xl border border-gray-800 self-start sm:self-auto">
+                {['1m', '5m', '15m', '1h', '4h', '1D'].map((tf) => (
+                  <button
+                    key={tf}
+                    onClick={() => setTimeframe(tf)}
+                    className={`px-3 py-1.5 text-xs font-mono font-bold rounded-lg transition-all cursor-pointer ${
+                      timeframe === tf
+                        ? 'bg-emerald-500 text-gray-950 shadow'
+                        : 'text-gray-400 hover:text-white hover:bg-gray-800'
+                    }`}
+                  >
+                    {tf}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* TradingView Advanced Live Interactive Chart Widget */}
+            <div className="mt-4 rounded-2xl overflow-hidden border border-gray-800 bg-gray-950 h-[580px]">
+              <iframe
+                key={selectedAsset.tvSymbol + timeframe}
+                src={tvWidgetUrl}
+                className="w-full h-full border-0"
+                title={`Live Chart - ${selectedAsset.displayName || selectedAsset.symbol}`}
+                allow="fullscreen"
+              />
+            </div>
+
+            {/* Key Market Metrics Footer */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-4 text-xs">
+              <div className="bg-gray-950 border border-gray-800 p-3 rounded-xl">
+                <span className="text-gray-500 block text-[10px] uppercase font-bold">24h High</span>
+                <span className="font-mono font-bold text-white">${selectedAsset.high?.toLocaleString() || '—'}</span>
+              </div>
+              <div className="bg-gray-950 border border-gray-800 p-3 rounded-xl">
+                <span className="text-gray-500 block text-[10px] uppercase font-bold">24h Low</span>
+                <span className="font-mono font-bold text-white">${selectedAsset.low?.toLocaleString() || '—'}</span>
+              </div>
+              <div className="bg-gray-950 border border-gray-800 p-3 rounded-xl">
+                <span className="text-gray-500 block text-[10px] uppercase font-bold">Trading Bias</span>
+                <span className="font-mono font-bold text-emerald-400">{selectedAsset.bias || 'Bullish'}</span>
+              </div>
+              <div className="bg-gray-950 border border-gray-800 p-3 rounded-xl">
+                <span className="text-gray-500 block text-[10px] uppercase font-bold">Min R:R Rule</span>
+                <span className="font-mono font-bold text-amber-400">1 : 2.8+</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* SIDEBAR: Desk Technical Analysis & Full Watchlist (4 Cols) */}
+        <div className="lg:col-span-4 space-y-6">
+          {/* Desk Technical Analysis Card */}
+          <div className="bg-gray-900 border border-gray-800 rounded-3xl p-5 shadow-xl space-y-4">
+            <div className="flex items-center justify-between pb-3 border-b border-gray-800">
+              <div className="flex items-center gap-2">
+                <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                <h3 className="text-base font-extrabold text-white">Desk Technical Setup</h3>
+              </div>
+              <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 font-bold uppercase">
+                {selectedAsset.symbol}
+              </span>
+            </div>
+
+            <div className="space-y-3 text-xs">
+              <div className="bg-gray-950 border border-gray-800 p-3.5 rounded-xl space-y-1.5">
+                <span className="text-gray-500 uppercase font-bold text-[10px] block">Recommended Play</span>
+                <p className="font-bold text-white text-sm">
+                  {selectedAsset.strategy || 'Trendline Breakout & Liquidity Sweep Execution'}
+                </p>
+              </div>
+
+              <div className="grid grid-cols-2 gap-2">
+                <div className="bg-gray-950 border border-gray-800 p-3 rounded-xl">
+                  <span className="text-gray-500 uppercase font-bold text-[10px] block">Support (S1 / S2)</span>
+                  <div className="font-mono font-bold text-emerald-400 text-xs mt-1">
+                    {selectedAsset.s1 || 'Key S1'} / {selectedAsset.s2 || 'Key S2'}
+                  </div>
+                </div>
+                <div className="bg-gray-950 border border-gray-800 p-3 rounded-xl">
+                  <span className="text-gray-500 uppercase font-bold text-[10px] block">Resistance (R1 / R2)</span>
+                  <div className="font-mono font-bold text-rose-400 text-xs mt-1">
+                    {selectedAsset.r1 || 'Key R1'} / {selectedAsset.r2 || 'Key R2'}
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-gray-950 border border-gray-800 p-3.5 rounded-xl">
+                <span className="text-gray-500 uppercase font-bold text-[10px] block mb-1">Desk Risk Guidelines</span>
+                <ul className="space-y-1 text-gray-300 text-[11px]">
+                  <li>• Never enter without predefined invalidation stop-loss</li>
+                  <li>• Max desk risk: 2% of allocated capital per setup</li>
+                  <li>• Partial profit target taking at 1:1.5 and trail remaining</li>
+                </ul>
+              </div>
+            </div>
+
+            {/* Direct CTA: Join VIP Room / Telegram */}
+            <div className="pt-2 space-y-2">
+              <Link
+                to="/dashboard/signals"
+                className="w-full bg-emerald-500 hover:bg-emerald-400 text-gray-950 font-black py-3 rounded-xl text-xs transition-all shadow-lg shadow-emerald-500/20 flex items-center justify-center gap-2 cursor-pointer"
+              >
+                <span>⚡</span>
+                <span>Open VIP Signals Room</span>
+              </Link>
+
+              <a
+                href="https://t.me/RisingRootsDesk"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="w-full bg-blue-500/10 hover:bg-blue-500/20 text-blue-400 border border-blue-500/30 font-bold py-2.5 rounded-xl text-xs transition-all flex items-center justify-center gap-2"
+              >
+                <span>✈️</span>
+                <span>Join Official Telegram VIP Desk</span>
+              </a>
+            </div>
+          </div>
+
+          {/* Full Watchlist & Search */}
+          <div className="bg-gray-900 border border-gray-800 rounded-3xl p-5 shadow-xl flex flex-col h-[480px]">
+            <div className="flex items-center justify-between mb-3 border-b border-gray-800 pb-3">
+              <h3 className="text-sm font-bold text-white">Multi-Asset Watchlist</h3>
+              <span className="text-[10px] font-mono text-emerald-400 font-bold">LIVE TICKS</span>
+            </div>
+
+            {/* Filter Pills */}
+            <div className="flex items-center gap-1 mb-3 overflow-x-auto pb-1 text-xs">
               {[
-                { id: 'crypto', label: 'Crypto (24/7)' },
-                { id: 'forex', label: 'Forex (24/5)' },
                 { id: 'all', label: 'All' },
+                { id: 'crypto', label: 'Crypto' },
+                { id: 'commodity', label: 'Metals' },
+                { id: 'indices', label: 'Indices' },
+                { id: 'forex', label: 'Forex' },
               ].map((tab) => (
                 <button
                   key={tab.id}
-                  onClick={() => setActiveTab(tab.id)}
-                  className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-                    activeTab === tab.id
+                  onClick={() => setActiveCategory(tab.id)}
+                  className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
+                    activeCategory === tab.id
                       ? 'bg-emerald-500 text-gray-950 shadow'
                       : 'text-gray-400 hover:text-white hover:bg-gray-800'
                   }`}
@@ -540,480 +526,56 @@ export default function TradingTerminal() {
               ))}
             </div>
 
-            <span className="text-[10px] font-mono text-emerald-400 font-bold">DELTA LIVE TICKS</span>
-          </div>
+            {/* Search Input */}
+            <div className="mb-3">
+              <input
+                type="text"
+                placeholder="Search BTC, Gold, Nifty, EUR..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full bg-gray-950 border border-gray-800 rounded-xl px-3 py-2 text-xs text-white placeholder-gray-500 focus:outline-none focus:border-emerald-500"
+              />
+            </div>
 
-          {/* Search bar */}
-          <div className="mb-3">
-            <input
-              type="text"
-              placeholder="Search BTC, ETH, EUR/USD..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full bg-gray-950 border border-gray-800 rounded-xl px-3 py-2 text-xs text-white placeholder-gray-500 focus:outline-none focus:border-emerald-500"
-            />
-          </div>
-
-          {/* Asset List */}
-          <div className="flex-1 overflow-y-auto space-y-2 pr-1 divide-y divide-gray-800/40">
-            {filteredAssets.map((asset) => {
-              const isSelected = selectedAsset.symbol === asset.symbol;
-              const tick = tickDirection[asset.symbol];
-
-              return (
-                <div
-                  key={asset.symbol}
-                  onClick={() => setSelectedAsset(asset)}
-                  className={`pt-2 p-3 rounded-xl cursor-pointer transition-all flex items-center justify-between ${
-                    isSelected
-                      ? 'bg-emerald-500/10 border border-emerald-500/30'
-                      : 'hover:bg-gray-800/50 border border-transparent'
-                  }`}
-                >
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <span className="font-extrabold text-sm text-white font-mono">{asset.symbol}</span>
-                      <span className="text-[9px] uppercase font-bold px-1.5 py-0.2 rounded bg-gray-800 text-gray-400">
-                        {asset.type}
-                      </span>
-                    </div>
-                    <span className="text-[11px] text-gray-400 truncate block mt-0.5">{asset.name}</span>
-                  </div>
-
-                  <div className="text-right">
-                    <div
-                      className={`text-sm font-black font-mono transition-colors ${
-                        tick === 'up'
-                          ? 'text-emerald-400'
-                          : tick === 'down'
-                          ? 'text-rose-400'
-                          : 'text-white'
-                      }`}
-                    >
-                      ${asset.spot >= 10 ? asset.spot.toLocaleString('en-US', { minimumFractionDigits: 2 }) : asset.spot}
-                    </div>
-                    <span
-                      className={`text-xs font-mono font-bold ${
-                        asset.changePct >= 0 ? 'text-emerald-400' : 'text-rose-400'
-                      }`}
-                    >
-                      {asset.changePct >= 0 ? '+' : ''}{asset.changePct.toFixed(2)}%
-                    </span>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-
-        {/* CENTER & RIGHT COLUMN: Chart & Order Ticket (8 Cols) */}
-        <div className="lg:col-span-8 space-y-6">
-          {/* Price Header & Chart */}
-          <div className="bg-gray-900 border border-gray-800 rounded-2xl p-5 shadow-xl">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-4 border-b border-gray-800 gap-4">
-              <div>
-                <div className="flex items-center gap-2">
-                  <h2 className="text-2xl font-black text-white font-mono">{selectedAsset.symbol}</h2>
-                  <span className="text-xs px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 font-bold uppercase">
-                    {selectedAsset.type}
-                  </span>
-                  <span className="text-xs text-gray-400">{selectedAsset.name}</span>
-                </div>
-                <div className="flex items-baseline gap-3 mt-1">
-                  <span className="text-3xl font-black font-mono text-white">
-                    ${selectedAsset.spot >= 10 ? selectedAsset.spot.toLocaleString('en-US', { minimumFractionDigits: 2 }) : selectedAsset.spot}
-                  </span>
-                  <span className={`text-sm font-bold font-mono ${selectedAsset.changePct >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
-                    {selectedAsset.changePct >= 0 ? '+' : ''}{selectedAsset.changePct.toFixed(2)}% (${selectedAsset.change})
-                  </span>
-                </div>
-              </div>
-
-              {/* Timeframe selector */}
-              <div className="flex items-center gap-1 bg-gray-950 p-1 rounded-xl border border-gray-800 self-start sm:self-auto">
-                {['1m', '5m', '15m', '1h', '1D'].map((tf) => (
-                  <button
-                    key={tf}
-                    onClick={() => setTimeframe(tf)}
-                    className={`px-2.5 py-1 text-xs font-mono font-bold rounded-lg transition-all cursor-pointer ${
-                      timeframe === tf
-                        ? 'bg-emerald-500 text-gray-950'
-                        : 'text-gray-400 hover:text-white'
+            {/* Asset List */}
+            <div className="flex-1 overflow-y-auto divide-y divide-gray-800/60 pr-1 space-y-1">
+              {filteredAssets.map((asset) => {
+                const isSelected = selectedAsset.symbol === asset.symbol;
+                return (
+                  <div
+                    key={asset.symbol}
+                    onClick={() => setSelectedAsset(asset)}
+                    className={`p-2.5 rounded-xl transition-all cursor-pointer flex items-center justify-between ${
+                      isSelected
+                        ? 'bg-emerald-500/15 border border-emerald-500/30'
+                        : 'hover:bg-gray-800/50'
                     }`}
                   >
-                    {tf}
-                  </button>
-                ))}
-              </div>
-            </div>
+                    <div>
+                      <div className="flex items-center gap-1.5">
+                        <span className="font-bold text-white text-xs">{asset.symbol}</span>
+                        <span className="text-[10px] text-gray-500 uppercase">{asset.category}</span>
+                      </div>
+                      <div className="text-[11px] text-gray-400 truncate max-w-[130px]">
+                        {asset.displayName}
+                      </div>
+                    </div>
 
-            {/* Simulated Live Sparkline / Waveform Chart */}
-            <div className="mt-4 relative h-56 w-full bg-gray-950/60 rounded-xl border border-gray-800/80 p-2 overflow-hidden flex items-end">
-              <svg className="w-full h-full" viewBox="0 0 600 200" preserveAspectRatio="none">
-                <defs>
-                  <linearGradient id="chartGrad" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="#10b981" stopOpacity="0.3" />
-                    <stop offset="100%" stopColor="#10b981" stopOpacity="0.0" />
-                  </linearGradient>
-                </defs>
-                {/* Area fill */}
-                {chartPoints && (
-                  <polygon
-                    points={`0,200 ${chartPoints} 600,200`}
-                    fill="url(#chartGrad)"
-                  />
-                )}
-                {/* Stroke line */}
-                {chartPoints && (
-                  <polyline
-                    fill="none"
-                    stroke="#10b981"
-                    strokeWidth="2.5"
-                    points={chartPoints}
-                  />
-                )}
-              </svg>
-
-              <div className="absolute top-3 left-4 text-[10px] font-mono text-gray-400">
-                High: ${maxPrice.toLocaleString()} | Low: ${minPrice.toLocaleString()}
-              </div>
-              <div className="absolute bottom-3 right-4 text-[10px] font-mono text-emerald-400 flex items-center gap-1.5">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping"></span>
-                <span>Real-Time Stream Active</span>
-              </div>
-            </div>
-
-            {/* Quick Stats Grid */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-4 text-xs">
-              <div className="bg-gray-950 border border-gray-800 p-2.5 rounded-xl">
-                <span className="text-gray-500 block text-[10px] uppercase font-bold">24h High</span>
-                <span className="font-mono font-bold text-white">${selectedAsset.high || selectedAsset.spot * 1.02}</span>
-              </div>
-              <div className="bg-gray-950 border border-gray-800 p-2.5 rounded-xl">
-                <span className="text-gray-500 block text-[10px] uppercase font-bold">24h Low</span>
-                <span className="font-mono font-bold text-white">${selectedAsset.low || selectedAsset.spot * 0.98}</span>
-              </div>
-              <div className="bg-gray-950 border border-gray-800 p-2.5 rounded-xl">
-                <span className="text-gray-500 block text-[10px] uppercase font-bold">24h Volume</span>
-                <span className="font-mono font-bold text-white">{selectedAsset.volume || 'Active'}</span>
-              </div>
-              <div className="bg-gray-950 border border-gray-800 p-2.5 rounded-xl">
-                <span className="text-gray-500 block text-[10px] uppercase font-bold">Leverage/Lot</span>
-                <span className="font-mono font-bold text-emerald-400">
-                  {selectedAsset.type === 'forex' ? '1:50 Margin' : 'Spot 1:1'}
-                </span>
-              </div>
-            </div>
-          </div>
-
-          {/* Paper Order Ticket Execution Form */}
-          <div className="bg-gray-900 border border-gray-800 rounded-2xl p-5 shadow-xl">
-            <div className="flex items-center justify-between pb-3 border-b border-gray-800 mb-4">
-              <div className="flex items-center gap-2">
-                <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse"></span>
-                <h3 className="text-base font-extrabold text-white">Paper Order Execution</h3>
-              </div>
-              <span className="text-xs font-mono text-gray-400">
-                Demo Margin: <strong className="text-emerald-400 font-bold">${paperMargin.toLocaleString()}</strong>
-              </span>
-            </div>
-
-            <form onSubmit={handleExecuteOrder} className="space-y-4">
-              {/* Buy / Sell Tabs */}
-              <div className="grid grid-cols-2 gap-2">
-                <button
-                  type="button"
-                  onClick={() => setOrderSide('long')}
-                  className={`py-2.5 rounded-xl text-xs font-black transition-all cursor-pointer ${
-                    orderSide === 'long'
-                      ? 'bg-emerald-500 text-gray-950 shadow-md shadow-emerald-500/20'
-                      : 'bg-gray-950 text-gray-400 hover:text-white border border-gray-800'
-                  }`}
-                >
-                  BUY / LONG
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setOrderSide('short')}
-                  className={`py-2.5 rounded-xl text-xs font-black transition-all cursor-pointer ${
-                    orderSide === 'short'
-                      ? 'bg-rose-500 text-white shadow-md shadow-rose-500/20'
-                      : 'bg-gray-950 text-gray-400 hover:text-white border border-gray-800'
-                  }`}
-                >
-                  SELL / SHORT
-                </button>
-              </div>
-
-              {/* Order Type: Market / Limit */}
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                <div>
-                  <label className="block text-[11px] font-semibold text-gray-400 mb-1">Order Type</label>
-                  <select
-                    value={orderType}
-                    onChange={(e) => setOrderType(e.target.value)}
-                    className="w-full bg-gray-950 border border-gray-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-emerald-500"
-                  >
-                    <option value="market">Market Order</option>
-                    <option value="limit">Limit Order</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-[11px] font-semibold text-gray-400 mb-1">
-                    {orderType === 'limit' ? 'Limit Price ($)' : 'Execution Price ($)'}
-                  </label>
-                  <input
-                    type="number"
-                    step="any"
-                    disabled={orderType === 'market'}
-                    value={orderType === 'market' ? selectedAsset.spot : limitPrice}
-                    onChange={(e) => setLimitPrice(e.target.value)}
-                    className="w-full bg-gray-950 border border-gray-800 rounded-xl px-3 py-2 text-xs font-mono text-white disabled:opacity-60 focus:outline-none focus:border-emerald-500"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-[11px] font-semibold text-gray-400 mb-1">Quantity</label>
-                  <input
-                    type="number"
-                    step="any"
-                    min="0.001"
-                    value={quantity}
-                    onChange={(e) => setQuantity(e.target.value)}
-                    className="w-full bg-gray-950 border border-gray-800 rounded-xl px-3 py-2 text-xs font-mono text-white focus:outline-none focus:border-emerald-500"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-[11px] font-semibold text-gray-400 mb-1">Required Margin</label>
-                  <div className="bg-gray-950 border border-gray-800 rounded-xl px-3 py-2 text-xs font-mono text-emerald-400 font-bold">
-                    ${totalMarginRequired.toLocaleString()}
+                    <div className="text-right">
+                      <div className="font-mono font-bold text-white text-xs">
+                        {asset.spot >= 1000 ? `$${asset.spot.toLocaleString()}` : `$${asset.spot}`}
+                      </div>
+                      <div className={`text-[10px] font-mono font-bold ${
+                        asset.changePct >= 0 ? 'text-emerald-400' : 'text-rose-400'
+                      }`}>
+                        {asset.changePct >= 0 ? '+' : ''}{asset.changePct.toFixed(2)}%
+                      </div>
+                    </div>
                   </div>
-                </div>
-              </div>
-
-              {/* SL / TP targets */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-[11px] font-semibold text-gray-400 mb-1">Stop Loss ($) (Optional)</label>
-                  <input
-                    type="number"
-                    step="any"
-                    placeholder="e.g. 62000"
-                    value={stopLoss}
-                    onChange={(e) => setStopLoss(e.target.value)}
-                    className="w-full bg-gray-950 border border-gray-800 rounded-xl px-3 py-2 text-xs font-mono text-white focus:outline-none focus:border-emerald-500"
-                  />
-                </div>
-                <div>
-                  <label className="block text-[11px] font-semibold text-gray-400 mb-1">Take Profit ($) (Optional)</label>
-                  <input
-                    type="number"
-                    step="any"
-                    placeholder="e.g. 68000"
-                    value={takeProfit}
-                    onChange={(e) => setTakeProfit(e.target.value)}
-                    className="w-full bg-gray-950 border border-gray-800 rounded-xl px-3 py-2 text-xs font-mono text-white focus:outline-none focus:border-emerald-500"
-                  />
-                </div>
-              </div>
-
-              {/* Submit CTA */}
-              <button
-                type="submit"
-                disabled={orderSubmitting}
-                className={`w-full py-3.5 rounded-xl font-black text-xs uppercase tracking-wider transition-all cursor-pointer shadow-lg disabled:opacity-50 ${
-                  orderSide === 'long'
-                    ? 'bg-emerald-500 hover:bg-emerald-400 text-gray-950 shadow-emerald-500/20'
-                    : 'bg-rose-500 hover:bg-rose-400 text-white shadow-rose-500/20'
-                }`}
-              >
-                {orderSubmitting
-                  ? 'Executing Paper Order...'
-                  : `Place Paper ${orderSide.toUpperCase()} Order (${selectedAsset.symbol})`}
-              </button>
-            </form>
-          </div>
-        </div>
-      </div>
-
-      {/* Toast Notification */}
-      {orderStatusToast && (
-        <div
-          className={`p-4 rounded-xl border text-sm font-semibold flex items-center justify-between shadow-xl ${
-            orderStatusToast.type === 'success'
-              ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-300'
-              : 'bg-rose-500/10 border-rose-500/30 text-rose-300'
-          }`}
-        >
-          <span>{orderStatusToast.message}</span>
-          <button onClick={() => setOrderStatusToast(null)} className="text-gray-400 hover:text-white text-xs">
-            ✕
-          </button>
-        </div>
-      )}
-
-      {/* BOTTOM SECTION: Real Database Positions & Trade History */}
-      <div className="bg-gray-900 border border-gray-800 rounded-2xl overflow-hidden shadow-2xl">
-        <div className="flex items-center justify-between border-b border-gray-800 px-6 py-4">
-          <div className="flex items-center gap-3">
-            <button
-              onClick={() => setActiveBottomTab('positions')}
-              className={`text-xs font-bold px-3 py-1.5 rounded-xl transition-all cursor-pointer ${
-                activeBottomTab === 'positions'
-                  ? 'bg-emerald-500 text-gray-950 shadow'
-                  : 'text-gray-400 hover:text-white'
-              }`}
-            >
-              Open Paper Positions ({openPositions.length})
-            </button>
-            <button
-              onClick={() => setActiveBottomTab('history')}
-              className={`text-xs font-bold px-3 py-1.5 rounded-xl transition-all cursor-pointer ${
-                activeBottomTab === 'history'
-                  ? 'bg-emerald-500 text-gray-950 shadow'
-                  : 'text-gray-400 hover:text-white'
-              }`}
-            >
-              Trade History ({closedTrades.length})
-            </button>
-          </div>
-
-          <button
-            onClick={fetchTrades}
-            className="text-xs text-gray-400 hover:text-white flex items-center gap-1 cursor-pointer"
-          >
-            <span>🔄</span> Refresh
-          </button>
-        </div>
-
-        <div className="p-6">
-          {activeBottomTab === 'positions' ? (
-            openPositions.length === 0 ? (
-              <div className="text-center py-12 text-gray-500 text-xs">
-                <span className="text-3xl block mb-2">📋</span>
-                No open paper positions. Place an order above or click any strike on the Option Chain to trade!
-              </div>
-            ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full text-left text-xs border-collapse">
-                  <thead>
-                    <tr className="border-b border-gray-800 text-[10px] text-gray-500 uppercase font-mono">
-                      <th className="py-2.5 px-3">Symbol</th>
-                      <th className="py-2.5 px-3">Type</th>
-                      <th className="py-2.5 px-3">Side</th>
-                      <th className="py-2.5 px-3">Qty</th>
-                      <th className="py-2.5 px-3 text-right">Entry Price</th>
-                      <th className="py-2.5 px-3 text-right">Current Price</th>
-                      <th className="py-2.5 px-3 text-right">Floating P&L</th>
-                      <th className="py-2.5 px-3 text-center">Action</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-gray-800/60 font-mono text-xs">
-                    {openPositions.map((pos) => {
-                      const metrics = calculatePositionMetrics(pos);
-                      return (
-                        <tr key={pos.id || pos._id} className="hover:bg-gray-800/40">
-                          <td className="py-3 px-3 font-bold text-white">{pos.symbol}</td>
-                          <td className="py-3 px-3">
-                            <span className="text-[10px] uppercase font-bold px-1.5 py-0.5 rounded bg-gray-800 text-gray-300">
-                              {pos.assetType}
-                            </span>
-                          </td>
-                          <td className="py-3 px-3">
-                            <span
-                              className={`text-[10px] uppercase font-black px-2 py-0.5 rounded ${
-                                pos.tradeType === 'long'
-                                  ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/30'
-                                  : 'bg-rose-500/10 text-rose-400 border border-rose-500/30'
-                              }`}
-                            >
-                              {pos.tradeType}
-                            </span>
-                          </td>
-                          <td className="py-3 px-3 text-gray-300">{pos.quantity}</td>
-                          <td className="py-3 px-3 text-right text-gray-300">
-                            ${pos.entryPrice.toLocaleString()}
-                          </td>
-                          <td className="py-3 px-3 text-right text-white font-bold">
-                            ${metrics.currentPrice.toLocaleString()}
-                          </td>
-                          <td
-                            className={`py-3 px-3 text-right font-bold ${
-                              metrics.pnl >= 0 ? 'text-emerald-400' : 'text-rose-400'
-                            }`}
-                          >
-                            {metrics.pnl >= 0 ? '+$' : '-$'}{Math.abs(metrics.pnl).toLocaleString()} ({metrics.pnlPercent}%)
-                          </td>
-                          <td className="py-3 px-3 text-center">
-                            <button
-                              onClick={() => handleSquareOff(pos)}
-                              className="bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/30 px-3 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer"
-                            >
-                              Square Off
-                            </button>
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
-            )
-          ) : closedTrades.length === 0 ? (
-            <div className="text-center py-12 text-gray-500 text-xs">
-              <span className="text-3xl block mb-2">📦</span>
-              No closed paper trades in history yet.
+                );
+              })}
             </div>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-left text-xs border-collapse">
-                <thead>
-                  <tr className="border-b border-gray-800 text-[10px] text-gray-500 uppercase font-mono">
-                    <th className="py-2.5 px-3">Symbol</th>
-                    <th className="py-2.5 px-3">Side</th>
-                    <th className="py-2.5 px-3 text-right">Entry</th>
-                    <th className="py-2.5 px-3 text-right">Exit</th>
-                    <th className="py-2.5 px-3 text-right">Realized P&L</th>
-                    <th className="py-2.5 px-3 text-center">Outcome</th>
-                    <th className="py-2.5 px-3 text-right">Date</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-800/60 font-mono text-xs">
-                  {closedTrades.map((t) => (
-                    <tr key={t.id || t._id} className="hover:bg-gray-800/40">
-                      <td className="py-3 px-3 font-bold text-white">{t.symbol}</td>
-                      <td className="py-3 px-3 uppercase text-gray-400">{t.tradeType}</td>
-                      <td className="py-3 px-3 text-right text-gray-300">${t.entryPrice?.toLocaleString()}</td>
-                      <td className="py-3 px-3 text-right text-gray-300">${t.exitPrice?.toLocaleString()}</td>
-                      <td
-                        className={`py-3 px-3 text-right font-bold ${
-                          (t.pnl || 0) >= 0 ? 'text-emerald-400' : 'text-rose-400'
-                        }`}
-                      >
-                        {(t.pnl || 0) >= 0 ? '+$' : '-$'}{Math.abs(t.pnl || 0).toLocaleString()} ({t.pnlPercent}%)
-                      </td>
-                      <td className="py-3 px-3 text-center">
-                        <span
-                          className={`text-[10px] uppercase font-bold px-2 py-0.5 rounded ${
-                            t.outcome === 'win'
-                              ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/30'
-                              : 'bg-rose-500/10 text-rose-400 border border-rose-500/30'
-                          }`}
-                        >
-                          {t.outcome || 'closed'}
-                        </span>
-                      </td>
-                      <td className="py-3 px-3 text-right text-gray-500 text-[11px]">
-                        {new Date(t.createdAt).toLocaleDateString()}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
+          </div>
         </div>
       </div>
     </div>

@@ -21,7 +21,7 @@ function Plans() {
             price: '$29/mo (₹2,499)',
             subscribers: 268,
             status: 'Active',
-            features: ['24/7 Live Crypto & Forex Feeds', 'Basic BTC/ETH Option Chain', '$10,000 Paper Trading Simulator', 'Community Discord Access'],
+            features: ['24/7 Live Crypto & Forex Feeds', 'Basic BTC/ETH Option Chain', 'Multi-Asset Live Charts (BTC, Gold, Nifty)', 'Community Discord Access'],
           },
           {
             id: 'pro',
@@ -33,7 +33,7 @@ function Plans() {
               'Full Option Chain with Greeks',
               'PCR & Max Pain Strike Analysis',
               'In-Platform VIP Signals Room',
-              'Advanced Paper Trading with SL/TP',
+              'Verified Trade History & Profit Proof Slips',
               'Priority Desk Support',
             ],
           },

@@ -145,15 +145,15 @@ function LandingPage() {
       badge: 'Subscriber',
       icon: '📈',
       color: 'from-emerald-500 to-green-400',
-      description: 'Access 24/7 crypto option chains, live price feeds, and risk-free $10,000 paper trading desk.',
+      description: 'Access 24/7 crypto option chains, live charts for BTC, ETH, SOL, Gold, Silver, Nifty & Sensex, and VIP signals.',
       accessLevel: 'Level 1 — Member Subscriber',
       capabilities: [
-        '24/7 Real-Time Crypto & Forex Price Watchlists',
-        'Interactive BTC & ETH Option Chain with Greeks (Delta/IV)',
-        'Risk-Free $10,000 Virtual Paper Trading Simulator',
-        'Instant Access to In-Platform VIP Signals Room',
-        'Put-Call Ratio (PCR) & Max Pain Level Analytics',
-        'Personal Subscriber Profile Management',
+        'Live Real-Time Charts for BTC, ETH, SOL, Gold, Silver, Nifty & Sensex',
+        'Official Delta Exchange BTC & ETH Option Chain with Native Greeks',
+        'Direct Access to In-Platform VIP Signals Room & Telegram Alerts',
+        'Put-Call Ratio (PCR) & Options Max Pain Level Analytics',
+        'Verified Past Trade Performance & Profit Screenshot Ledger',
+        'Personal Subscriber Profile & Query Support Desk',
       ],
     },
     {
@@ -256,7 +256,7 @@ function LandingPage() {
             to="/dashboard/terminal"
             className="bg-emerald-500 hover:bg-emerald-400 text-gray-950 text-[11px] font-black px-3 py-1 rounded-full transition-all cursor-pointer shadow"
           >
-            Terminal & Paper Desk →
+            Live Charts & Terminal →
           </Link>
         </div>
       </div>
@@ -306,35 +306,62 @@ function LandingPage() {
           </div>
         </div>
 
-        <div className="hidden md:flex items-center gap-8 text-sm text-gray-400">
+        <div className="hidden md:flex items-center gap-6 text-sm text-gray-400">
+          <Link to="/about" className="hover:text-white transition-colors">
+            About Us
+          </Link>
           <Link to="/history" className="hover:text-emerald-400 transition-colors font-bold text-white flex items-center gap-1.5">
-            <span>🏆</span> Track Record & History
+            <span>🏆</span> Track Record
+          </Link>
+          <Link to="/dashboard/terminal" className="hover:text-emerald-400 transition-colors font-bold text-white flex items-center gap-1">
+            <span>⚡</span> Live Charts
           </Link>
           <Link to="/dashboard/options" className="hover:text-amber-400 transition-colors font-bold text-white flex items-center gap-1">
             <span>📈</span> Option Chain
           </Link>
-          <Link to="/dashboard/terminal" className="hover:text-emerald-400 transition-colors font-bold text-white flex items-center gap-1">
-            <span>⚡</span> Paper Terminal
+          <Link to="/contact" className="hover:text-white transition-colors">
+            Query Desk
           </Link>
-          <a href="#roles" className="hover:text-white transition-colors">Roles</a>
-          <a href="#features" className="hover:text-white transition-colors">Features</a>
           <a href="#pricing" className="hover:text-white transition-colors">Pricing</a>
-          <a href="#team" className="hover:text-white transition-colors">Team</a>
         </div>
 
         <div className="flex items-center gap-3">
-          <button
-            onClick={() => setShowJoinModal(true)}
-            className="hidden sm:flex items-center gap-1.5 bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 border border-amber-500/30 px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer"
+          <Link
+            to="/contact"
+            className="hidden sm:flex items-center gap-1.5 bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 border border-amber-500/30 px-3.5 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer"
           >
-            <span>📩</span> Request to Join
-          </button>
-          <Link to="/login" className="text-sm text-gray-400 hover:text-white px-3 py-2 transition-colors">
-            Sign In
+            <span>💬</span> Query Desk
           </Link>
-          <Link to="/login?mode=signup" className="bg-green-500 hover:bg-green-400 text-gray-950 font-bold px-5 py-2.5 rounded-xl text-sm transition-colors">
-            Get Started Free
-          </Link>
+
+          {localStorage.getItem('rr_auth') ? (
+            <div className="flex items-center gap-2">
+              <Link
+                to="/dashboard"
+                className="bg-emerald-500 hover:bg-emerald-400 text-gray-950 font-bold px-4 py-2 rounded-xl text-xs transition-colors"
+              >
+                Dashboard
+              </Link>
+              <button
+                onClick={() => {
+                  localStorage.removeItem('rr_token');
+                  localStorage.removeItem('rr_auth');
+                  window.location.reload();
+                }}
+                className="bg-gray-800 hover:bg-rose-500/20 text-gray-300 hover:text-rose-400 border border-gray-700 px-3 py-2 rounded-xl text-xs font-semibold transition-colors cursor-pointer"
+              >
+                Logout
+              </button>
+            </div>
+          ) : (
+            <>
+              <Link to="/login" className="text-sm text-gray-400 hover:text-white px-3 py-2 transition-colors">
+                Sign In
+              </Link>
+              <Link to="/login?mode=signup" className="bg-green-500 hover:bg-green-400 text-gray-950 font-bold px-5 py-2.5 rounded-xl text-sm transition-colors">
+                Get Started Free
+              </Link>
+            </>
+          )}
         </div>
       </nav>
 
@@ -359,7 +386,7 @@ function LandingPage() {
           </h1>
 
           <p className="text-gray-400 text-lg max-w-xl leading-relaxed">
-            Institutional-grade live market feeds for Bitcoin, Ethereum, and major currency pairs. Analyze real-time option chains, Greeks (Delta/IV), and Max Pain levels with a risk-free $10,000 paper trading desk.
+            Institutional-grade live market feeds for Bitcoin, Ethereum, Solana, Gold, Silver, Nifty 50, and Sensex. Analyze real-time Delta Exchange option chains, native Greeks (Delta/IV), and verified performance ledgers.
           </p>
 
           <div className="flex flex-wrap items-center gap-4">
@@ -370,16 +397,16 @@ function LandingPage() {
               <span>🏆</span> Verified Past Trades (78% Win)
             </Link>
             <Link
-              to="/dashboard/options"
-              className="bg-amber-500 hover:bg-amber-400 text-gray-950 font-black px-7 py-3.5 rounded-xl text-sm transition-all shadow-lg shadow-amber-500/20 cursor-pointer flex items-center gap-2"
-            >
-              <span>📊</span> View Option Chain
-            </Link>
-            <Link
               to="/dashboard/terminal"
               className="border border-emerald-500/40 hover:bg-emerald-500/10 text-emerald-400 font-bold px-7 py-3.5 rounded-xl text-sm transition-colors cursor-pointer flex items-center gap-2"
             >
-              <span>⚡</span> Open Paper Terminal ($10k)
+              <span>⚡</span> Live Charts (BTC, ETH, Nifty, Sensex)
+            </Link>
+            <Link
+              to="/dashboard/options"
+              className="bg-amber-500 hover:bg-amber-400 text-gray-950 font-black px-7 py-3.5 rounded-xl text-sm transition-all shadow-lg shadow-amber-500/20 cursor-pointer flex items-center gap-2"
+            >
+              <span>📊</span> Delta Option Chain
             </Link>
           </div>
 
@@ -432,9 +459,9 @@ function LandingPage() {
 
             <div className="space-y-3">
               {[
-                'Deribit & Binance Live Options Surface',
+                'Official Delta Exchange BTC & ETH Options Surface',
                 'Global Forex Sessions (London, NY, Tokyo)',
-                'Risk-Free $10,000 Paper Trading Simulator',
+                'Live Charts for BTC, ETH, SOL, Gold, Silver, Nifty & Sensex',
                 'In-Platform VIP Signals Room & Desk Feed',
               ].map((item, i) => (
                 <div key={i} className="flex items-center gap-3 bg-gray-950/80 border border-gray-800/50 p-3 rounded-xl">
@@ -494,7 +521,7 @@ function LandingPage() {
           <span className="text-xs font-semibold text-amber-400 uppercase tracking-widest">Platform Features</span>
           <h2 className="text-3xl lg:text-4xl font-extrabold text-white mt-3">Engineered for Crypto & Forex Desks</h2>
           <p className="text-gray-400 mt-3 max-w-2xl mx-auto text-sm">
-            Real-time volatility analysis, automated paper orders, and VIP member community tools.
+            Real-time volatility analysis, interactive multi-asset charts, and VIP member community tools.
           </p>
         </div>
 
@@ -503,12 +530,12 @@ function LandingPage() {
             {
               icon: '📈',
               title: 'BTC & ETH Option Chain',
-              desc: 'Deribit-style option chain showing strikes, daily/weekly/monthly expiries, LTP, IV, Delta, Open Interest, and Put-Call Ratio.',
+              desc: 'Official Delta Exchange option chain showing real strikes, expiries, LTP, native Greeks (Delta/Theta/Gamma), Open Interest, and Put-Call Ratio.',
             },
             {
               icon: '⚡',
               title: '24/7 Live Crypto Feeds',
-              desc: 'Instant streaming prices for Bitcoin, Ethereum, Solana, and major altcoins powered by public Binance ticker APIs.',
+              desc: 'Instant streaming prices for Bitcoin, Ethereum, Solana, and major altcoins powered by public Delta Exchange ticker APIs.',
             },
             {
               icon: '🌍',
@@ -516,19 +543,19 @@ function LandingPage() {
               desc: 'Continuous tracking of London, New York, Tokyo, and Sydney liquidity sessions for EUR/USD, GBP/USD, USD/JPY, and more.',
             },
             {
-              icon: '🛡️',
-              title: '$10,000 Paper Trading Simulator',
-              desc: 'Test options scalping and spot strategies with zero financial risk. Track floating P&L in real-time and square off positions.',
+              icon: '📊',
+              title: 'Multi-Asset Live Charts',
+              desc: 'Interactive live candlestick charts for BTC, ETH, SOL, Gold (XAU/USD), Silver (XAG/USD), NIFTY 50, and BSE SENSEX.',
             },
             {
               icon: '🔥',
               title: 'Native VIP Signals Room',
-              desc: 'Broadcast high-conviction trade setups directly on our platform with live entry/target metrics, audio chimes, and 1-click paper execution.',
+              desc: 'Broadcast high-conviction trade setups directly on our platform with live entry/target metrics, risk-reward parameters, and audio alerts.',
             },
             {
-              icon: '📊',
-              title: 'Real-Time Portfolio Journal',
-              desc: 'Track open and closed paper trades, win rates, risk-reward ratios, and member retention in MongoDB.',
+              icon: '🏆',
+              title: 'Verified Performance Track Record',
+              desc: '100% audited historical trade ledger with verified profit screenshot proofs, audited win-rate, and mathematical expectancy.',
             },
           ].map((f, i) => (
             <div key={i} className="bg-gray-900 border border-gray-800 rounded-2xl p-6 hover:border-gray-700 transition-all space-y-3">
@@ -552,7 +579,7 @@ function LandingPage() {
             Invest in Your Trading Future with <span className="text-green-400">Institutional Tools</span>
           </h2>
           <p className="text-gray-400 mt-3 max-w-2xl mx-auto text-sm leading-relaxed">
-            Full Option Chain analysis, real-time crypto & forex prices, and risk-free paper trading. Use promo code <span className="text-green-400 font-mono font-bold">ROOTS20</span> for 20% off!
+            Full Delta Option Chain analysis, real-time crypto & indices live charts, and VIP signal alerts. Use promo code <span className="text-green-400 font-mono font-bold">ROOTS20</span> for 20% off!
           </p>
         </div>
 
@@ -567,7 +594,7 @@ function LandingPage() {
                 <span className="text-xs text-gray-500 font-mono">Popular with learners</span>
               </div>
               <h3 className="text-2xl font-bold text-white">Crypto & Forex Starter</h3>
-              <p className="text-xs text-gray-400 mt-1 mb-6">Live streaming tickers, basic option chain, and $10,000 paper trading.</p>
+              <p className="text-xs text-gray-400 mt-1 mb-6">Live streaming tickers, basic option chain, and multi-asset live charts.</p>
 
               <div className="mb-6">
                 <div className="flex items-baseline gap-2">
@@ -584,7 +611,7 @@ function LandingPage() {
                 {[
                   '24/7 Live Crypto & Forex Streaming Feeds',
                   'Basic BTC & ETH Option Chain Viewer',
-                  '$10,000 Risk-Free Paper Trading Simulator',
+                  'Live Charts for BTC, ETH, SOL, Gold & Silver',
                   'Community Discord Discussion Access',
                 ].map((item, i) => (
                   <div key={i} className="flex items-center gap-3">
@@ -641,7 +668,7 @@ function LandingPage() {
                   'Full Deribit-Style Option Chain with Greeks (Delta/IV)',
                   'Put-Call Ratio (PCR) & Max Pain Strike Analytics',
                   'Instant Access to In-Platform VIP Signals Room & Alerts',
-                  'Advanced Paper Trading with Square-Off & SL/TP',
+                  'Interactive Charts for BTC, ETH, SOL, Gold, Silver, Nifty & Sensex',
                   'Priority Trading Desk Support',
                 ].map((item, i) => (
                   <div key={i} className="flex items-center gap-3">
@@ -998,7 +1025,7 @@ function LandingPage() {
                     <strong>Educational & Analytical Platform:</strong> Rising Roots operates strictly as a quantitative analytics tool, data terminal, and educational trading community. No content, signal, metric, or post constitutes financial, investment, legal, or tax advice. Past historical performance is never a guarantee of future returns.
                   </p>
                   <p>
-                    <strong>Paper Trading Simulation:</strong> All paper trading features utilize virtual, non-redeemable demo capital ($10,000 USD) for strategy modeling with zero financial liability.
+                    <strong>Risk & Capital Preservation:</strong> Financial markets involve inherent risk. Never risk more capital than you can comfortably afford to lose. Trade management and position sizing remain the sole responsibility of the individual trader.
                   </p>
                 </>
               )}
