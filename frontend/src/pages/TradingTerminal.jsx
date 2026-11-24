@@ -2,7 +2,51 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { getGlobalMarketStatus } from '../utils/marketHours';
 
-// Institutional 7 Core Assets specified by Client + Major FX
+// Helper: Format asset price accurately by category
+export const formatAssetPrice = (asset, price) => {
+  if (price === undefined || price === null || isNaN(price)) return '—';
+  const num = Number(price);
+  if (asset?.category === 'indices') {
+    return `${num.toLocaleString('en-IN', { maximumFractionDigits: 2 })} pts`;
+  }
+  if (asset?.category === 'forex') {
+    return `$${num.toFixed(4)}`;
+  }
+  if (num >= 1000) {
+    return `$${num.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  }
+  return `$${num.toFixed(2)}`;
+};
+
+// Helper: Compute dynamic Support and Resistance relative to current live spot price
+export const computeLevels = (asset, spot) => {
+  const p = Number(spot) || 100;
+  if (asset?.category === 'indices') {
+    return {
+      s1: `${Math.round(p * 0.993).toLocaleString('en-IN')} pts`,
+      s2: `${Math.round(p * 0.985).toLocaleString('en-IN')} pts`,
+      r1: `${Math.round(p * 1.007).toLocaleString('en-IN')} pts`,
+      r2: `${Math.round(p * 1.015).toLocaleString('en-IN')} pts`,
+    };
+  }
+  if (asset?.category === 'forex') {
+    return {
+      s1: `$${(p * 0.996).toFixed(4)}`,
+      s2: `$${(p * 0.992).toFixed(4)}`,
+      r1: `$${(p * 1.004).toFixed(4)}`,
+      r2: `$${(p * 1.008).toFixed(4)}`,
+    };
+  }
+  // Crypto & Commodities
+  return {
+    s1: `$${Math.round(p * 0.985).toLocaleString('en-US')}`,
+    s2: `$${Math.round(p * 0.968).toLocaleString('en-US')}`,
+    r1: `$${Math.round(p * 1.018).toLocaleString('en-US')}`,
+    r2: `$${Math.round(p * 1.035).toLocaleString('en-US')}`,
+  };
+};
+
+// 7 Core Institutional Assets requested by Client
 const FEATURED_CHART_ASSETS = [
   {
     symbol: 'BTCUSDT',
@@ -10,17 +54,14 @@ const FEATURED_CHART_ASSETS = [
     tvSymbol: 'BINANCE:BTCUSDT',
     category: 'crypto',
     badge: 'Crypto 24/7',
-    icon: '₿',
+    tag: 'BTC',
+    tagClass: 'bg-amber-500/20 text-amber-400 border border-amber-500/30',
     exchange: 'Delta / Binance',
-    spot: 64650.00,
-    changePct: 1.76,
-    high: 65420.00,
-    low: 63890.00,
-    bias: 'Bullish Momentum',
-    s1: '$63,800',
-    s2: '$62,400',
-    r1: '$65,800',
-    r2: '$67,200',
+    spot: 59537.00,
+    changePct: -2.87,
+    high: 61850.00,
+    low: 58920.00,
+    bias: 'Demand Zone Retest',
     strategy: '15M Demand Zone Retest with 1:3.0 R:R',
   },
   {
@@ -29,18 +70,15 @@ const FEATURED_CHART_ASSETS = [
     tvSymbol: 'BINANCE:ETHUSDT',
     category: 'crypto',
     badge: 'Crypto 24/7',
-    icon: 'Ξ',
+    tag: 'ETH',
+    tagClass: 'bg-indigo-500/20 text-indigo-400 border border-indigo-500/30',
     exchange: 'Delta / Binance',
-    spot: 2680.40,
-    changePct: 2.15,
-    high: 2710.00,
-    low: 2610.00,
-    bias: 'Bullish Breakout',
-    s1: '$2,620',
-    s2: '$2,550',
-    r1: '$2,740',
-    r2: '$2,850',
-    strategy: 'Continuation Long above $2,650 Resistance',
+    spot: 1677.50,
+    changePct: -2.38,
+    high: 1720.00,
+    low: 1640.00,
+    bias: 'Range Accumulation',
+    strategy: 'Continuation Long above $1,650 Support',
   },
   {
     symbol: 'SOLUSDT',
@@ -48,18 +86,15 @@ const FEATURED_CHART_ASSETS = [
     tvSymbol: 'BINANCE:SOLUSDT',
     category: 'crypto',
     badge: 'Crypto 24/7',
-    icon: '◎',
+    tag: 'SOL',
+    tagClass: 'bg-purple-500/20 text-purple-400 border border-purple-500/30',
     exchange: 'Delta / Binance',
-    spot: 156.20,
-    changePct: -0.85,
-    high: 159.80,
-    low: 152.40,
-    bias: 'Range Accumulation',
-    s1: '$150.00',
-    s2: '$144.50',
-    r1: '$162.00',
-    r2: '$170.00',
-    strategy: 'Range Low Sweep & Reclaim Play',
+    spot: 70.25,
+    changePct: -1.55,
+    high: 73.50,
+    low: 68.80,
+    bias: 'Liquidity Reclaim',
+    strategy: 'Sweep of Lows & Reclaim Breakout',
   },
   {
     symbol: 'XAUUSD',
@@ -67,18 +102,15 @@ const FEATURED_CHART_ASSETS = [
     tvSymbol: 'TVC:GOLD',
     category: 'commodity',
     badge: 'Precious Metals',
-    icon: '🥇',
-    exchange: 'Global Spot',
+    tag: 'GOLD',
+    tagClass: 'bg-yellow-500/20 text-yellow-300 border border-yellow-500/30',
+    exchange: 'Global Spot Bullion',
     spot: 2688.50,
     changePct: 0.74,
-    high: 2694.20,
-    low: 2673.10,
-    bias: 'Strong Bullish',
-    s1: '$2,670',
-    s2: '$2,652',
-    r1: '$2,710',
-    r2: '$2,735',
-    strategy: 'Macro Yield Invalidation Dip Buying',
+    high: 2695.40,
+    low: 2671.20,
+    bias: 'Macro Bullish',
+    strategy: 'Macro Yield Invalidation Dip Buying with 1:2.8 R:R',
   },
   {
     symbol: 'XAGUSD',
@@ -86,18 +118,15 @@ const FEATURED_CHART_ASSETS = [
     tvSymbol: 'TVC:SILVER',
     category: 'commodity',
     badge: 'Precious Metals',
-    icon: '🥈',
-    exchange: 'Global Spot',
+    tag: 'SILVER',
+    tagClass: 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/30',
+    exchange: 'Global Spot Bullion',
     spot: 31.55,
     changePct: 1.28,
     high: 31.95,
     low: 31.05,
     bias: 'Bullish Expansion',
-    s1: '$31.10',
-    s2: '$30.40',
-    r1: '$32.40',
-    r2: '$33.20',
-    strategy: 'High Volume Trendline Breakout',
+    strategy: 'High Volume Trendline Breakout Confirmation',
   },
   {
     symbol: 'NIFTY',
@@ -105,17 +134,14 @@ const FEATURED_CHART_ASSETS = [
     tvSymbol: 'NSE:NIFTY',
     category: 'indices',
     badge: 'Indian Benchmark',
-    icon: '🇮🇳',
+    tag: 'NSE',
+    tagClass: 'bg-orange-500/20 text-orange-400 border border-orange-500/30',
     exchange: 'National Stock Exchange (NSE)',
     spot: 24385.00,
     changePct: 0.52,
     high: 24460.00,
     low: 24310.00,
     bias: 'Bullish Continuation',
-    s1: '24,250',
-    s2: '24,100',
-    r1: '24,550',
-    r2: '24,700',
     strategy: 'Intraday Call Buying on 20-EMA Pullback',
   },
   {
@@ -124,34 +150,31 @@ const FEATURED_CHART_ASSETS = [
     tvSymbol: 'BSE:SENSEX',
     category: 'indices',
     badge: 'Indian Benchmark',
-    icon: '🇮🇳',
+    tag: 'BSE',
+    tagClass: 'bg-blue-500/20 text-blue-400 border border-blue-500/30',
     exchange: 'Bombay Stock Exchange (BSE)',
     spot: 80280.00,
     changePct: 0.46,
     high: 80510.00,
     low: 80020.00,
     bias: 'Institutional Accumulation',
-    s1: '79,800',
-    s2: '79,200',
-    r1: '80,800',
-    r2: '81,500',
     strategy: 'Largecap Financial Momentum Setup',
   },
 ];
 
 const FOREX_WATCHLIST = [
-  { symbol: 'EUR/USD', displayName: 'Euro / US Dollar', tvSymbol: 'FX:EURUSD', spot: 1.0845, changePct: 0.17, high: 1.0870, low: 1.0820, category: 'forex' },
-  { symbol: 'GBP/USD', displayName: 'British Pound / USD', tvSymbol: 'FX:GBPUSD', spot: 1.3025, changePct: -0.18, high: 1.3065, low: 1.2990, category: 'forex' },
-  { symbol: 'USD/JPY', displayName: 'USD / Japanese Yen', tvSymbol: 'FX:USDJPY', spot: 153.40, changePct: 0.43, high: 153.90, low: 152.60, category: 'forex' },
-  { symbol: 'AUD/USD', displayName: 'Australian Dollar / USD', tvSymbol: 'FX:AUDUSD', spot: 0.6680, changePct: 0.18, high: 0.6710, low: 0.6650, category: 'forex' },
+  { symbol: 'EUR/USD', displayName: 'Euro / US Dollar', tvSymbol: 'FX:EURUSD', spot: 1.0845, changePct: 0.17, high: 1.0870, low: 1.0820, category: 'forex', tag: 'EUR', tagClass: 'bg-blue-500/20 text-blue-300 border border-blue-500/30', exchange: 'Global FX Liquidity', bias: 'Range Bound', strategy: 'London Session High Rejection' },
+  { symbol: 'GBP/USD', displayName: 'British Pound / USD', tvSymbol: 'FX:GBPUSD', spot: 1.3025, changePct: -0.18, high: 1.3065, low: 1.2990, category: 'forex', tag: 'GBP', tagClass: 'bg-indigo-500/20 text-indigo-300 border border-indigo-500/30', exchange: 'Global FX Liquidity', bias: 'Bearish Pullback', strategy: 'New York Session Open Momentum' },
+  { symbol: 'USD/JPY', displayName: 'USD / Japanese Yen', tvSymbol: 'FX:USDJPY', spot: 153.40, changePct: 0.43, high: 153.90, low: 152.60, category: 'forex', tag: 'JPY', tagClass: 'bg-red-500/20 text-red-300 border border-red-500/30', exchange: 'Global FX Liquidity', bias: 'Bullish Continuation', strategy: 'Tokyo Fix Continuation Setup' },
+  { symbol: 'AUD/USD', displayName: 'Australian Dollar / USD', tvSymbol: 'FX:AUDUSD', spot: 0.6680, changePct: 0.18, high: 0.6710, low: 0.6650, category: 'forex', tag: 'AUD', tagClass: 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30', exchange: 'Global FX Liquidity', bias: 'Commodity Currency Bid', strategy: 'Support Bounce Play' },
 ];
 
 export default function TradingTerminal() {
   const API_URL = import.meta.env.VITE_API_URL || (import.meta.env.DEV ? 'http://localhost:5000' : '');
   const [searchParams] = useSearchParams();
 
-  // Selected asset & timeframe
-  const [selectedAsset, setSelectedAsset] = useState(FEATURED_CHART_ASSETS[0]);
+  // Active Symbol and Timeframe
+  const [selectedSymbol, setSelectedSymbol] = useState('BTCUSDT');
   const [timeframe, setTimeframe] = useState('15m');
   const [activeCategory, setActiveCategory] = useState('all'); // 'all' | 'crypto' | 'commodity' | 'indices' | 'forex'
   const [searchQuery, setSearchQuery] = useState('');
@@ -188,14 +211,14 @@ export default function TradingTerminal() {
     };
 
     fetchDeltaTickers();
-    const interval = setInterval(fetchDeltaTickers, 4000);
+    const interval = setInterval(fetchDeltaTickers, 3000);
     return () => {
       isSubscribed = false;
       clearInterval(interval);
     };
   }, [API_URL]);
 
-  // Handle URL query param (e.g. arriving from VIP signals)
+  // Handle URL query param (e.g. arriving from VIP signals room)
   useEffect(() => {
     const sym = searchParams.get('symbol');
     if (sym) {
@@ -203,11 +226,11 @@ export default function TradingTerminal() {
       const match = [...FEATURED_CHART_ASSETS, ...FOREX_WATCHLIST].find(
         (a) => a.symbol.replace(/[^A-Za-z0-9]/g, '').toUpperCase() === clean
       );
-      if (match) setSelectedAsset(match);
+      if (match) setSelectedSymbol(match.symbol);
     }
   }, [searchParams]);
 
-  // Combined Watchlist
+  // Combined Watchlist with Live Spot Merging
   const allAssets = useMemo(() => {
     return [...FEATURED_CHART_ASSETS, ...FOREX_WATCHLIST].map((item) => {
       const live = cryptoSpotMap[item.symbol];
@@ -224,7 +247,17 @@ export default function TradingTerminal() {
     });
   }, [cryptoSpotMap]);
 
-  // Filtered Assets
+  // Currently Selected Asset (Always synced to live ticks)
+  const currentAsset = useMemo(() => {
+    return allAssets.find((a) => a.symbol === selectedSymbol) || allAssets[0];
+  }, [allAssets, selectedSymbol]);
+
+  // Dynamic Support & Resistance levels
+  const levels = useMemo(() => {
+    return computeLevels(currentAsset, currentAsset.spot);
+  }, [currentAsset]);
+
+  // Filtered Assets for Watchlist
   const filteredAssets = useMemo(() => {
     let list = allAssets;
     if (activeCategory !== 'all') {
@@ -251,7 +284,7 @@ export default function TradingTerminal() {
 
   const tvInterval = intervalMap[timeframe] || '15';
   const tvWidgetUrl = `https://s.tradingview.com/widgetembed/?symbol=${encodeURIComponent(
-    selectedAsset.tvSymbol
+    currentAsset.tvSymbol
   )}&interval=${tvInterval}&theme=dark&style=1&timezone=Asia%2FKolkata&studies=%5B%5D&hide_side_toolbar=0&allow_symbol_change=1&save_image=0&locale=en`;
 
   return (
@@ -303,18 +336,19 @@ export default function TradingTerminal() {
           <span className="text-xs font-mono font-bold text-gray-400 uppercase tracking-wider">
             Client Core Markets: 1-Click Live Chart Switcher
           </span>
-          <span className="text-[10px] font-mono text-emerald-400 font-bold">
-            TRADINGVIEW LIVE CANDLESTICKS
+          <span className="text-[10px] font-mono text-emerald-400 font-bold flex items-center gap-1.5">
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+            LIVE REAL-TIME TICKS
           </span>
         </div>
 
         <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-2">
-          {FEATURED_CHART_ASSETS.map((asset) => {
-            const isSelected = selectedAsset.symbol === asset.symbol;
+          {allAssets.slice(0, 7).map((asset) => {
+            const isSelected = selectedSymbol === asset.symbol;
             return (
               <button
                 key={asset.symbol}
-                onClick={() => setSelectedAsset(asset)}
+                onClick={() => setSelectedSymbol(asset.symbol)}
                 className={`p-2.5 rounded-xl text-left transition-all cursor-pointer flex flex-col justify-between ${
                   isSelected
                     ? 'bg-emerald-500 text-gray-950 shadow-md shadow-emerald-500/20 font-bold'
@@ -322,19 +356,23 @@ export default function TradingTerminal() {
                 }`}
               >
                 <div className="flex items-center justify-between">
-                  <span className="text-base">{asset.icon}</span>
-                  <span className={`text-[10px] font-mono font-bold ${
-                    isSelected ? 'text-gray-900' : asset.changePct >= 0 ? 'text-emerald-400' : 'text-rose-400'
+                  <span className={`text-[10px] font-mono font-black px-1.5 py-0.5 rounded ${
+                    isSelected ? 'bg-gray-950 text-emerald-400' : asset.tagClass || 'bg-gray-800 text-gray-300'
                   }`}>
-                    {asset.changePct >= 0 ? '+' : ''}{asset.changePct.toFixed(2)}%
+                    {asset.tag || asset.symbol}
+                  </span>
+                  <span className={`text-[10px] font-mono font-bold ${
+                    isSelected ? 'text-gray-950 font-black' : asset.changePct >= 0 ? 'text-emerald-400' : 'text-rose-400'
+                  }`}>
+                    {asset.changePct >= 0 ? '+' : ''}{Number(asset.changePct).toFixed(2)}%
                   </span>
                 </div>
-                <div className="mt-1">
+                <div className="mt-1.5">
                   <div className={`text-xs font-black truncate ${isSelected ? 'text-gray-950' : 'text-white'}`}>
                     {asset.symbol}
                   </div>
-                  <div className={`text-[10px] font-mono truncate ${isSelected ? 'text-gray-900' : 'text-gray-400'}`}>
-                    {asset.spot >= 1000 ? `$${asset.spot.toLocaleString()}` : `$${asset.spot}`}
+                  <div className={`text-[10px] font-mono font-bold truncate ${isSelected ? 'text-gray-900' : 'text-gray-300'}`}>
+                    {formatAssetPrice(asset, asset.spot)}
                   </div>
                 </div>
               </button>
@@ -351,27 +389,27 @@ export default function TradingTerminal() {
             {/* Header: Selected Asset Info & Timeframe Bar */}
             <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-4 border-b border-gray-800 gap-4">
               <div>
-                <div className="flex items-center gap-2">
-                  <span className="text-2xl">{selectedAsset.icon || '📈'}</span>
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className={`text-xs font-mono font-black px-2 py-0.5 rounded ${currentAsset.tagClass || 'bg-gray-800 text-white'}`}>
+                    {currentAsset.tag || currentAsset.symbol}
+                  </span>
                   <h2 className="text-xl sm:text-2xl font-black text-white font-mono">
-                    {selectedAsset.displayName || selectedAsset.symbol}
+                    {currentAsset.displayName || currentAsset.symbol}
                   </h2>
                   <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 font-bold uppercase">
-                    {selectedAsset.badge || selectedAsset.category}
+                    {currentAsset.badge || currentAsset.category}
                   </span>
                 </div>
 
                 <div className="flex items-baseline gap-3 mt-1.5">
                   <span className="text-3xl font-black font-mono text-white tracking-tight">
-                    {selectedAsset.spot >= 1000
-                      ? `$${selectedAsset.spot.toLocaleString('en-US', { minimumFractionDigits: 2 })}`
-                      : `$${selectedAsset.spot}`}
+                    {formatAssetPrice(currentAsset, currentAsset.spot)}
                   </span>
-                  <span className={`text-sm font-bold font-mono ${selectedAsset.changePct >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
-                    {selectedAsset.changePct >= 0 ? '+' : ''}{selectedAsset.changePct.toFixed(2)}%
+                  <span className={`text-sm font-bold font-mono ${currentAsset.changePct >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
+                    {currentAsset.changePct >= 0 ? '+' : ''}{Number(currentAsset.changePct).toFixed(2)}%
                   </span>
                   <span className="text-xs text-gray-500 font-mono">
-                    Feed: {selectedAsset.exchange || 'TradingView Real-Time'}
+                    Feed: {currentAsset.exchange || 'Delta / TradingView Real-Time'}
                   </span>
                 </div>
               </div>
@@ -397,74 +435,75 @@ export default function TradingTerminal() {
             {/* TradingView Advanced Live Interactive Chart Widget */}
             <div className="mt-4 rounded-2xl overflow-hidden border border-gray-800 bg-gray-950 h-[580px]">
               <iframe
-                key={selectedAsset.tvSymbol + timeframe}
+                key={currentAsset.tvSymbol + timeframe}
                 src={tvWidgetUrl}
                 className="w-full h-full border-0"
-                title={`Live Chart - ${selectedAsset.displayName || selectedAsset.symbol}`}
+                title={`Live Chart - ${currentAsset.displayName || currentAsset.symbol}`}
                 allow="fullscreen"
               />
             </div>
 
             {/* Key Market Metrics Footer */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-4 text-xs">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-4 text-xs font-mono">
               <div className="bg-gray-950 border border-gray-800 p-3 rounded-xl">
                 <span className="text-gray-500 block text-[10px] uppercase font-bold">24h High</span>
-                <span className="font-mono font-bold text-white">${selectedAsset.high?.toLocaleString() || '—'}</span>
+                <span className="font-bold text-white">{formatAssetPrice(currentAsset, currentAsset.high)}</span>
               </div>
               <div className="bg-gray-950 border border-gray-800 p-3 rounded-xl">
                 <span className="text-gray-500 block text-[10px] uppercase font-bold">24h Low</span>
-                <span className="font-mono font-bold text-white">${selectedAsset.low?.toLocaleString() || '—'}</span>
+                <span className="font-bold text-white">{formatAssetPrice(currentAsset, currentAsset.low)}</span>
               </div>
               <div className="bg-gray-950 border border-gray-800 p-3 rounded-xl">
                 <span className="text-gray-500 block text-[10px] uppercase font-bold">Trading Bias</span>
-                <span className="font-mono font-bold text-emerald-400">{selectedAsset.bias || 'Bullish'}</span>
+                <span className="font-bold text-emerald-400">{currentAsset.bias || 'Bullish'}</span>
               </div>
               <div className="bg-gray-950 border border-gray-800 p-3 rounded-xl">
                 <span className="text-gray-500 block text-[10px] uppercase font-bold">Min R:R Rule</span>
-                <span className="font-mono font-bold text-amber-400">1 : 2.8+</span>
+                <span className="font-bold text-amber-400">1 : 2.8+</span>
               </div>
             </div>
           </div>
         </div>
 
         {/* SIDEBAR: Desk Technical Analysis & Full Watchlist (4 Cols) */}
-        <div className="lg:col-span-4 space-y-6">
+        <div className="lg:col-span-4 space-y-5">
           {/* Desk Technical Analysis Card */}
-          <div className="bg-gray-900 border border-gray-800 rounded-3xl p-5 shadow-xl space-y-4">
+          <div className="bg-gray-900 border border-gray-800 rounded-3xl p-5 shadow-xl space-y-3.5">
             <div className="flex items-center justify-between pb-3 border-b border-gray-800">
               <div className="flex items-center gap-2">
                 <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse"></span>
                 <h3 className="text-base font-extrabold text-white">Desk Technical Setup</h3>
               </div>
               <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 font-bold uppercase">
-                {selectedAsset.symbol}
+                {currentAsset.symbol}
               </span>
             </div>
 
             <div className="space-y-3 text-xs">
-              <div className="bg-gray-950 border border-gray-800 p-3.5 rounded-xl space-y-1.5">
+              <div className="bg-gray-950 border border-gray-800 p-3 rounded-xl space-y-1">
                 <span className="text-gray-500 uppercase font-bold text-[10px] block">Recommended Play</span>
-                <p className="font-bold text-white text-sm">
-                  {selectedAsset.strategy || 'Trendline Breakout & Liquidity Sweep Execution'}
+                <p className="font-bold text-white text-xs sm:text-sm">
+                  {currentAsset.strategy || 'Trendline Breakout & Liquidity Sweep Execution'}
                 </p>
               </div>
 
+              {/* Real-time Dynamic Support & Resistance */}
               <div className="grid grid-cols-2 gap-2">
                 <div className="bg-gray-950 border border-gray-800 p-3 rounded-xl">
                   <span className="text-gray-500 uppercase font-bold text-[10px] block">Support (S1 / S2)</span>
                   <div className="font-mono font-bold text-emerald-400 text-xs mt-1">
-                    {selectedAsset.s1 || 'Key S1'} / {selectedAsset.s2 || 'Key S2'}
+                    {levels.s1} / {levels.s2}
                   </div>
                 </div>
                 <div className="bg-gray-950 border border-gray-800 p-3 rounded-xl">
                   <span className="text-gray-500 uppercase font-bold text-[10px] block">Resistance (R1 / R2)</span>
                   <div className="font-mono font-bold text-rose-400 text-xs mt-1">
-                    {selectedAsset.r1 || 'Key R1'} / {selectedAsset.r2 || 'Key R2'}
+                    {levels.r1} / {levels.r2}
                   </div>
                 </div>
               </div>
 
-              <div className="bg-gray-950 border border-gray-800 p-3.5 rounded-xl">
+              <div className="bg-gray-950 border border-gray-800 p-3 rounded-xl">
                 <span className="text-gray-500 uppercase font-bold text-[10px] block mb-1">Desk Risk Guidelines</span>
                 <ul className="space-y-1 text-gray-300 text-[11px]">
                   <li>• Never enter without predefined invalidation stop-loss</li>
@@ -474,30 +513,28 @@ export default function TradingTerminal() {
               </div>
             </div>
 
-            {/* Direct CTA: Join VIP Room / Telegram */}
+            {/* Direct In-Platform Desk CTAs */}
             <div className="pt-2 space-y-2">
               <Link
                 to="/dashboard/signals"
-                className="w-full bg-emerald-500 hover:bg-emerald-400 text-gray-950 font-black py-3 rounded-xl text-xs transition-all shadow-lg shadow-emerald-500/20 flex items-center justify-center gap-2 cursor-pointer"
+                className="w-full bg-emerald-500 hover:bg-emerald-400 text-gray-950 font-black py-2.5 rounded-xl text-xs transition-all shadow-lg shadow-emerald-500/20 flex items-center justify-center gap-2 cursor-pointer"
               >
                 <span>⚡</span>
-                <span>Open VIP Signals Room</span>
+                <span>Open VIP Signals Room →</span>
               </Link>
 
-              <a
-                href="https://t.me/RisingRootsDesk"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="w-full bg-blue-500/10 hover:bg-blue-500/20 text-blue-400 border border-blue-500/30 font-bold py-2.5 rounded-xl text-xs transition-all flex items-center justify-center gap-2"
+              <Link
+                to="/dashboard/options"
+                className="w-full bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 border border-amber-500/30 font-bold py-2.5 rounded-xl text-xs transition-all flex items-center justify-center gap-2"
               >
-                <span>✈️</span>
-                <span>Join Official Telegram VIP Desk</span>
-              </a>
+                <span>📈</span>
+                <span>Open Delta Option Chain →</span>
+              </Link>
             </div>
           </div>
 
           {/* Full Watchlist & Search */}
-          <div className="bg-gray-900 border border-gray-800 rounded-3xl p-5 shadow-xl flex flex-col h-[480px]">
+          <div className="bg-gray-900 border border-gray-800 rounded-3xl p-5 shadow-xl flex flex-col h-[420px]">
             <div className="flex items-center justify-between mb-3 border-b border-gray-800 pb-3">
               <h3 className="text-sm font-bold text-white">Multi-Asset Watchlist</h3>
               <span className="text-[10px] font-mono text-emerald-400 font-bold">LIVE TICKS</span>
@@ -540,11 +577,11 @@ export default function TradingTerminal() {
             {/* Asset List */}
             <div className="flex-1 overflow-y-auto divide-y divide-gray-800/60 pr-1 space-y-1">
               {filteredAssets.map((asset) => {
-                const isSelected = selectedAsset.symbol === asset.symbol;
+                const isSelected = selectedSymbol === asset.symbol;
                 return (
                   <div
                     key={asset.symbol}
-                    onClick={() => setSelectedAsset(asset)}
+                    onClick={() => setSelectedSymbol(asset.symbol)}
                     className={`p-2.5 rounded-xl transition-all cursor-pointer flex items-center justify-between ${
                       isSelected
                         ? 'bg-emerald-500/15 border border-emerald-500/30'
@@ -556,19 +593,19 @@ export default function TradingTerminal() {
                         <span className="font-bold text-white text-xs">{asset.symbol}</span>
                         <span className="text-[10px] text-gray-500 uppercase">{asset.category}</span>
                       </div>
-                      <div className="text-[11px] text-gray-400 truncate max-w-[130px]">
+                      <div className="text-[11px] text-gray-400 truncate max-w-[140px]">
                         {asset.displayName}
                       </div>
                     </div>
 
-                    <div className="text-right">
-                      <div className="font-mono font-bold text-white text-xs">
-                        {asset.spot >= 1000 ? `$${asset.spot.toLocaleString()}` : `$${asset.spot}`}
+                    <div className="text-right font-mono">
+                      <div className="font-bold text-white text-xs">
+                        {formatAssetPrice(asset, asset.spot)}
                       </div>
-                      <div className={`text-[10px] font-mono font-bold ${
+                      <div className={`text-[10px] font-bold ${
                         asset.changePct >= 0 ? 'text-emerald-400' : 'text-rose-400'
                       }`}>
-                        {asset.changePct >= 0 ? '+' : ''}{asset.changePct.toFixed(2)}%
+                        {asset.changePct >= 0 ? '+' : ''}{Number(asset.changePct).toFixed(2)}%
                       </div>
                     </div>
                   </div>
