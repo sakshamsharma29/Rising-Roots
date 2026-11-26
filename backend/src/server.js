@@ -62,18 +62,19 @@ app.get('*', (req, res, next) => {
 // Auto-provision initial Admin and Plans if database is fresh
 const ensureInitialSetup = async () => {
   try {
-    const adminEmail = 'admin@risingroots.com';
+    const adminEmail = (process.env.ADMIN_EMAIL || 'admin@risingroots.com').toLowerCase().trim();
+    const adminPassword = process.env.ADMIN_PASSWORD || 'admin123';
     const adminExists = await User.findOne({ email: adminEmail });
     if (!adminExists) {
       const salt = bcrypt.genSaltSync(10);
-      const hash = bcrypt.hashSync('admin123', salt);
+      const hash = bcrypt.hashSync(adminPassword, salt);
       await User.create({
-        name: 'Admin Trader',
+        name: 'Desk Admin',
         email: adminEmail,
         passwordHash: hash,
         role: 'admin',
       });
-      console.log('✓ Default Admin User created (admin@risingroots.com / admin123)');
+      console.log(`✓ Dedicated Admin User created (${adminEmail} / ${adminPassword})`);
     }
 
     const planCount = await Plan.countDocuments();

@@ -34,7 +34,10 @@ export const registerUser = async (req, res) => {
 
     const salt = bcrypt.genSaltSync(10);
     const passwordHash = bcrypt.hashSync(password, salt);
-    const userRole = role || 'user';
+    
+    // Security enforcement: ONLY the dedicated admin email can ever have 'admin' privileges
+    const dedicatedAdminEmail = (process.env.ADMIN_EMAIL || 'admin@risingroots.com').toLowerCase().trim();
+    const userRole = cleanEmail === dedicatedAdminEmail ? 'admin' : 'user';
 
     const kycState = (idNumber || idDocumentUrl) ? 'Pending' : 'Not Submitted';
 
@@ -110,9 +113,10 @@ export const loginUser = async (req, res) => {
     let user = await User.findOne({ email: cleanEmail });
 
     // Auto-provision member if not found in User model (e.g. seeded member or testing member)
+    const dedicatedAdminEmail = (process.env.ADMIN_EMAIL || 'admin@risingroots.com').toLowerCase().trim();
     if (!user) {
       // Do not auto-create admin with incorrect password
-      if (cleanEmail === 'admin@risingroots.com') {
+      if (cleanEmail === dedicatedAdminEmail) {
         return res.status(401).json({ success: false, message: 'Invalid admin credentials.' });
       }
 
