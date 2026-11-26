@@ -2,6 +2,7 @@ import User from '../models/User.js';
 import Member from '../models/Member.js';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
+import { sendWelcomeEmail, sendAdminAlertEmail } from '../services/emailService.js';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'rising_roots_secret_key_2026';
 
@@ -94,6 +95,30 @@ export const registerUser = async (req, res) => {
       kycStatus: newUser.kycStatus,
     };
     const token = jwt.sign(payload, JWT_SECRET, { expiresIn: '7d' });
+
+    // Non-blocking automated email notifications via dedicated application mailer
+    sendWelcomeEmail({
+      to: newUser.email,
+      name: newUser.name,
+      idType: newUser.idType,
+      idNumber: newUser.idNumber,
+      role: newUser.role,
+    }).catch(err => console.error('[Email Service] Error sending welcome email:', err.message));
+
+    sendAdminAlertEmail({
+      alertType: 'New User Registration',
+      title: `New Trader Registered: ${newUser.name}`,
+      detailsHtml: `
+        <div style="font-size: 14px; color: #f1f5f9; line-height: 1.8;">
+          <p style="margin: 0 0 8px 0;"><strong>Name:</strong> ${newUser.name}</p>
+          <p style="margin: 0 0 8px 0;"><strong>Email:</strong> ${newUser.email}</p>
+          <p style="margin: 0 0 8px 0;"><strong>Phone:</strong> ${newUser.phone || 'N/A'}</p>
+          <p style="margin: 0 0 8px 0;"><strong>City / State:</strong> ${[newUser.city, newUser.state].filter(Boolean).join(', ') || 'N/A'}</p>
+          <p style="margin: 0 0 8px 0;"><strong>KYC Document:</strong> ${newUser.idType} (${newUser.idNumber || 'Pending upload'})</p>
+          <p style="margin: 0;"><strong>KYC Status:</strong> <span style="color: #f59e0b; font-weight: 700;">${newUser.kycStatus}</span></p>
+        </div>
+      `,
+    }).catch(err => console.error('[Email Service] Error sending admin registration alert:', err.message));
 
     res.status(201).json({ success: true, token, user: payload });
   } catch (error) {

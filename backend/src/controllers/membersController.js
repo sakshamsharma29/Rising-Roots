@@ -2,6 +2,7 @@ import Member from '../models/Member.js';
 import User from '../models/User.js';
 import Broadcast from '../models/Broadcast.js';
 import { sendBroadcastSignal } from '../services/telegramBot.js';
+import { sendKycApprovedEmail, sendKycRejectedEmail } from '../services/emailService.js';
 
 export const getMembers = async (req, res) => {
   try {
@@ -188,6 +189,22 @@ export const updateMemberKycStatus = async (req, res) => {
         kycRejectionReason: member.kycRejectionReason,
       }
     );
+
+    // Non-blocking automated email dispatch to member from dedicated application mailer
+    if (kycStatus === 'Verified') {
+      sendKycApprovedEmail({
+        to: member.email,
+        name: member.name,
+        idType: member.idType,
+      }).catch(err => console.error('[Email Service] Error sending KYC approval email:', err.message));
+    } else if (kycStatus === 'Rejected') {
+      sendKycRejectedEmail({
+        to: member.email,
+        name: member.name,
+        idType: member.idType,
+        reason: member.kycRejectionReason,
+      }).catch(err => console.error('[Email Service] Error sending KYC rejection email:', err.message));
+    }
 
     res.json({
       success: true,

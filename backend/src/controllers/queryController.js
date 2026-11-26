@@ -1,4 +1,5 @@
 import QueryMessage from '../models/QueryMessage.js';
+import { sendQueryConfirmationEmail, sendAdminAlertEmail } from '../services/emailService.js';
 
 // 1. Submit Query (Public Endpoint)
 export const submitQuery = async (req, res) => {
@@ -24,6 +25,31 @@ export const submitQuery = async (req, res) => {
       message: message.trim(),
       status: 'New',
     });
+
+    // Non-blocking automated email notifications via dedicated application mailer
+    sendQueryConfirmationEmail({
+      to: cleanEmail,
+      name: name.trim(),
+      subject: subject || 'General Query',
+    }).catch(err => console.error('[Email Service] Error sending query confirmation email:', err.message));
+
+    sendAdminAlertEmail({
+      alertType: 'New Desk Inquiry',
+      title: `Query from ${name}: ${subject || 'General Inbound Consultation'}`,
+      detailsHtml: `
+        <div style="font-size: 14px; color: #f1f5f9; line-height: 1.8;">
+          <p style="margin: 0 0 8px 0;"><strong>Name:</strong> ${name}</p>
+          <p style="margin: 0 0 8px 0;"><strong>Email:</strong> ${cleanEmail}</p>
+          <p style="margin: 0 0 8px 0;"><strong>Phone:</strong> ${phone}</p>
+          ${telegram ? `<p style="margin: 0 0 8px 0;"><strong>Telegram:</strong> ${telegram}</p>` : ''}
+          <p style="margin: 0 0 8px 0;"><strong>Market Focus:</strong> ${marketInterest || 'Crypto & Forex'}</p>
+          <p style="margin: 0 0 8px 0;"><strong>Subject:</strong> ${subject || 'General Query'}</p>
+          <div style="margin-top: 12px; padding: 12px; background-color: #0d131f; border-left: 3px solid #10b981; border-radius: 4px;">
+            <p style="margin: 0; font-size: 13px; color: #cbd5e1;">"${message}"</p>
+          </div>
+        </div>
+      `,
+    }).catch(err => console.error('[Email Service] Error sending admin query alert:', err.message));
 
     res.status(201).json({
       success: true,
