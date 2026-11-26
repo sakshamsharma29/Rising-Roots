@@ -11,6 +11,23 @@ const memberSchema = new mongoose.Schema(
     state: { type: String, trim: true, default: '' },
     tradingExperience: { type: String, default: 'Intermediate' },
     preferredMarket: { type: String, default: 'All Markets' },
+    // Government ID & KYC Verification Fields
+    idType: {
+      type: String,
+      enum: ['PAN Card', 'Aadhaar Card', 'Passport', 'Driving License', 'Voter ID'],
+      default: 'PAN Card',
+    },
+    idNumber: { type: String, trim: true, uppercase: true, default: '' },
+    idDocumentUrl: { type: String, default: '' },
+    idDocumentBackUrl: { type: String, default: '' },
+    kycStatus: {
+      type: String,
+      enum: ['Pending', 'Verified', 'Rejected', 'Not Submitted'],
+      default: 'Pending',
+    },
+    kycSubmittedAt: { type: Date, default: Date.now },
+    kycVerifiedAt: { type: Date, default: null },
+    kycRejectionReason: { type: String, default: '' },
     plan: { type: String, required: true, default: 'Pro Trader' },
     status: { type: String, enum: ['Active', 'Expired'], default: 'Active' },
     planDuration: { type: String, enum: ['monthly', 'quarterly', 'yearly'], default: 'monthly' },

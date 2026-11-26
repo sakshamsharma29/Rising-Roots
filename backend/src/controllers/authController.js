@@ -18,6 +18,10 @@ export const registerUser = async (req, res) => {
       state,
       tradingExperience,
       preferredMarket,
+      idType,
+      idNumber,
+      idDocumentUrl,
+      idDocumentBackUrl,
     } = req.body;
 
     if (!name || !email || !password) {
@@ -34,6 +38,8 @@ export const registerUser = async (req, res) => {
     const passwordHash = bcrypt.hashSync(password, salt);
     const userRole = role || 'user';
 
+    const kycState = (idNumber || idDocumentUrl) ? 'Pending' : 'Not Submitted';
+
     const newUser = await User.create({
       name,
       email: cleanEmail,
@@ -45,6 +51,12 @@ export const registerUser = async (req, res) => {
       state: state || '',
       tradingExperience: tradingExperience || 'Intermediate',
       preferredMarket: preferredMarket || 'All Markets',
+      idType: idType || 'PAN Card',
+      idNumber: (idNumber || '').toUpperCase().trim(),
+      idDocumentUrl: idDocumentUrl || '',
+      idDocumentBackUrl: idDocumentBackUrl || '',
+      kycStatus: kycState,
+      kycSubmittedAt: new Date(),
     });
 
     // Always create a Member record for any user role
@@ -62,6 +74,12 @@ export const registerUser = async (req, res) => {
           preferredMarket: preferredMarket || 'All Markets',
           plan: 'Pro Trader',
           status: 'Active',
+          idType: idType || 'PAN Card',
+          idNumber: (idNumber || '').toUpperCase().trim(),
+          idDocumentUrl: idDocumentUrl || '',
+          idDocumentBackUrl: idDocumentBackUrl || '',
+          kycStatus: kycState,
+          kycSubmittedAt: new Date(),
           joinedDate: new Date(),
         });
       }
@@ -76,6 +94,9 @@ export const registerUser = async (req, res) => {
       telegramUsername: newUser.telegramUsername,
       city: newUser.city,
       preferredMarket: newUser.preferredMarket,
+      idType: newUser.idType,
+      idNumber: newUser.idNumber,
+      kycStatus: newUser.kycStatus,
     };
     const token = jwt.sign(payload, JWT_SECRET, { expiresIn: '7d' });
 
@@ -154,12 +175,57 @@ export const loginUser = async (req, res) => {
       telegramUsername: user.telegramUsername || '',
       city: user.city || '',
       preferredMarket: user.preferredMarket || 'All Markets',
+      idType: user.idType || 'PAN Card',
+      idNumber: user.idNumber || '',
+      kycStatus: user.kycStatus || 'Not Submitted',
     };
     const token = jwt.sign(payload, JWT_SECRET, { expiresIn: '7d' });
 
     res.json({ success: true, token, user: payload });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+export const submitKyc = async (req, res) => {
+  try {
+    const { email, idType, idNumber, idDocumentUrl, idDocumentBackUrl } = req.body;
+    const userEmail = (email || (req.user && req.user.email) || '').toLowerCase().trim();
+
+    if (!userEmail) {
+      return res.status(400).json({ success: false, message: 'User email is required.' });
+    }
+    if (!idNumber) {
+      return res.status(400).json({ success: false, message: 'Government ID number is required.' });
+    }
+
+    const updateData = {
+      idType: idType || 'PAN Card',
+      idNumber: (idNumber || '').toUpperCase().trim(),
+      idDocumentUrl: idDocumentUrl || '',
+      idDocumentBackUrl: idDocumentBackUrl || '',
+      kycStatus: 'Pending',
+      kycSubmittedAt: new Date(),
+      kycRejectionReason: '',
+    };
+
+    const user = await User.findOneAndUpdate({ email: userEmail }, updateData, { new: true });
+    await Member.findOneAndUpdate({ email: userEmail }, updateData);
+
+    res.json({
+      success: true,
+      message: 'Government ID proof submitted successfully. Pending compliance verification.',
+      user: {
+        id: user ? user.id : undefined,
+        name: user ? user.name : '',
+        email: userEmail,
+        kycStatus: 'Pending',
+        idType: updateData.idType,
+        idNumber: updateData.idNumber,
+      },
+    });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
   }
 };
 

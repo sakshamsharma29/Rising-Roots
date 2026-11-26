@@ -5,6 +5,7 @@ import {
   updateMember,
   deleteMember,
   toggleMemberStatus,
+  updateMemberKycStatus,
   getStats,
   getActivities,
   broadcastAnnouncement,
@@ -38,6 +39,7 @@ router.post('/members', addMember);
 router.put('/members/:id', updateMember);
 router.delete('/members/:id', deleteMember);
 router.patch('/members/:id/toggle', toggleMemberStatus);
+router.patch('/members/:id/kyc', updateMemberKycStatus);
 
 // Broadcast & Stats
 router.post('/broadcast', broadcastAnnouncement);

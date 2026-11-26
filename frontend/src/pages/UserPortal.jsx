@@ -44,16 +44,23 @@ function UserPortal() {
   useEffect(() => {
     if (!token) return;
 
-    // Fetch user member status
+    // Fetch user member status and KYC profile
     fetch(`${API_URL}/api/auth/me`, { headers })
       .then((res) => res.json())
       .then((resData) => {
         if (resData.success && resData.user) {
+          setMemberInfo((prev) => ({
+            ...prev,
+            ...resData.user,
+          }));
           fetch(`${API_URL}/api/members?search=${encodeURIComponent(resData.user.email)}`, { headers })
             .then((mRes) => mRes.json())
             .then((mData) => {
               if (mData.success && mData.data && mData.data.length > 0) {
-                setMemberInfo(mData.data[0]);
+                setMemberInfo((prev) => ({
+                  ...prev,
+                  ...mData.data[0],
+                }));
               }
             })
             .catch(() => {});
@@ -141,6 +148,80 @@ function UserPortal() {
           </Link>
         </div>
       </div>
+
+      {/* KYC Government ID Verification Status Banner */}
+      {memberInfo.kycStatus === 'Verified' ? (
+        <div className="bg-emerald-950/20 border border-emerald-500/30 rounded-2xl p-4.5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center text-emerald-400 font-bold text-lg shrink-0">
+              ✓
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-bold text-white uppercase tracking-wider">Government ID Verified</span>
+                <span className="bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 text-[10px] font-bold px-2 py-0.5 rounded-full">
+                  FIU-IND & AML Compliant
+                </span>
+              </div>
+              <p className="text-xs text-gray-400 mt-0.5 font-mono">
+                Verified with official {memberInfo.idType || 'Government ID'}: {memberInfo.idNumber ? `${memberInfo.idNumber.substring(0, 4)}••••${memberInfo.idNumber.slice(-2)}` : 'Verified'}. Your identity has been authenticated.
+              </p>
+            </div>
+          </div>
+          <div className="flex items-center gap-1.5 text-xs text-emerald-400 font-bold bg-emerald-500/10 px-3 py-1.5 rounded-xl border border-emerald-500/20 shrink-0">
+            <span>🛡️</span> Verified Trader Desk
+          </div>
+        </div>
+      ) : memberInfo.kycStatus === 'Rejected' ? (
+        <div className="bg-rose-950/20 border border-rose-500/30 rounded-2xl p-4.5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-rose-500/10 border border-rose-500/30 flex items-center justify-center text-rose-400 font-bold text-lg shrink-0">
+              ✕
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-bold text-rose-300 uppercase tracking-wider">KYC Verification Rejected</span>
+                <span className="bg-rose-500/10 text-rose-400 border border-rose-500/30 text-[10px] font-bold px-2 py-0.5 rounded-full">
+                  Action Required
+                </span>
+              </div>
+              <p className="text-xs text-rose-200/80 mt-0.5">
+                Reason: {memberInfo.kycRejectionReason || 'Document photo was unreadable or details mismatched'}. Please contact compliance to re-authenticate.
+              </p>
+            </div>
+          </div>
+          <a
+            href="https://wa.me/919999999999?text=Hello%20Rising%20Roots%20Support,%20I%20need%20help%20with%20my%20KYC%20verification."
+            target="_blank"
+            rel="noopener noreferrer"
+            className="bg-rose-500/20 hover:bg-rose-500/30 text-rose-300 border border-rose-500/30 px-3.5 py-2 rounded-xl text-xs font-bold whitespace-nowrap cursor-pointer transition shrink-0"
+          >
+            Contact Compliance Helpdesk →
+          </a>
+        </div>
+      ) : (
+        <div className="bg-amber-950/20 border border-amber-500/30 rounded-2xl p-4.5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-amber-400 font-bold text-lg shrink-0 animate-pulse">
+              ⏳
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-bold text-white uppercase tracking-wider">KYC Verification Under Review</span>
+                <span className="bg-amber-500/10 text-amber-400 border border-amber-500/30 text-[10px] font-bold px-2 py-0.5 rounded-full">
+                  FIU-IND Compliance Queue
+                </span>
+              </div>
+              <p className="text-xs text-gray-400 mt-0.5">
+                Your {memberInfo.idType || 'Government ID'} {memberInfo.idNumber ? `(${memberInfo.idNumber.substring(0, 4)}••••)` : ''} has been securely uploaded and is undergoing standard compliance review. All live signals and charts are fully active.
+              </p>
+            </div>
+          </div>
+          <div className="flex items-center gap-1.5 text-xs text-amber-400 font-semibold bg-amber-500/10 px-3 py-1.5 rounded-xl border border-amber-500/20 shrink-0">
+            <span>⚡ Audit In Progress</span>
+          </div>
+        </div>
+      )}
 
       {/* Subscription Status & Demo Wallet Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">

@@ -5,12 +5,20 @@ function Members({ searchTerm, showAddModal, onCloseAddModal }) {
   const [members, setMembers] = useState([]);
   const [pendingRequests, setPendingRequests] = useState([]);
   const [statusFilter, setStatusFilter] = useState('All');
+  const [kycFilter, setKycFilter] = useState('All'); // 'All' | 'Pending' | 'Verified' | 'Rejected'
   const [localSearch, setLocalSearch] = useState('');
+
+  // KYC Review Modal State
+  const [selectedKycMember, setSelectedKycMember] = useState(null);
+  const [rejectionInput, setRejectionInput] = useState('');
+  const [processingKyc, setProcessingKyc] = useState(false);
 
   // Form State for Adding New Member
   const [newName, setNewName] = useState('');
   const [newEmail, setNewEmail] = useState('');
   const [newPlan, setNewPlan] = useState('Pro Trader');
+  const [newIdType, setNewIdType] = useState('PAN Card');
+  const [newIdNumber, setNewIdNumber] = useState('');
 
   const query = searchTerm !== undefined ? searchTerm : localSearch;
   const API_URL = import.meta.env.VITE_API_URL || (import.meta.env.DEV ? 'http://localhost:5000' : '');
@@ -25,6 +33,7 @@ function Members({ searchTerm, showAddModal, onCloseAddModal }) {
     const params = new URLSearchParams();
     if (query) params.append('search', query);
     if (statusFilter !== 'All') params.append('status', statusFilter);
+    if (kycFilter !== 'All') params.append('kycStatus', kycFilter);
 
     fetch(`${API_URL}/api/members?${params.toString()}`, { headers })
       .then((res) => res.json())
@@ -46,7 +55,34 @@ function Members({ searchTerm, showAddModal, onCloseAddModal }) {
   useEffect(() => {
     fetchMembers();
     fetchPendingRequests();
-  }, [query, statusFilter]);
+  }, [query, statusFilter, kycFilter]);
+
+  const handleKycAction = async (memberId, kycStatus, reason = '') => {
+    setProcessingKyc(true);
+    try {
+      const res = await fetch(`${API_URL}/api/members/${memberId}/kyc`, {
+        method: 'PATCH',
+        headers,
+        body: JSON.stringify({ kycStatus, rejectionReason: reason }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        fetchMembers();
+        if (selectedKycMember && (selectedKycMember.id === memberId || selectedKycMember._id === memberId)) {
+          setSelectedKycMember((prev) => ({
+            ...prev,
+            kycStatus,
+            kycRejectionReason: reason,
+            kycVerifiedAt: kycStatus === 'Verified' ? new Date() : null,
+          }));
+        }
+      }
+    } catch (err) {
+      console.error('Error updating KYC:', err);
+    } finally {
+      setProcessingKyc(false);
+    }
+  };
 
   const handleToggleStatus = (id) => {
     fetch(`${API_URL}/api/members/${id}/toggle`, { method: 'PATCH', headers })
@@ -86,7 +122,15 @@ function Members({ searchTerm, showAddModal, onCloseAddModal }) {
     e.preventDefault();
     if (!newName || !newEmail) return;
 
-    const payload = { name: newName, email: newEmail, plan: newPlan, status: 'Active' };
+    const payload = {
+      name: newName,
+      email: newEmail,
+      plan: newPlan,
+      status: 'Active',
+      idType: newIdType,
+      idNumber: newIdNumber,
+      kycStatus: newIdNumber ? 'Verified' : 'Pending',
+    };
 
     fetch(`${API_URL}/api/members`, {
       method: 'POST',
@@ -103,6 +147,7 @@ function Members({ searchTerm, showAddModal, onCloseAddModal }) {
 
     setNewName('');
     setNewEmail('');
+    setNewIdNumber('');
     if (onCloseAddModal) onCloseAddModal();
   };
 
@@ -145,17 +190,39 @@ function Members({ searchTerm, showAddModal, onCloseAddModal }) {
         <>
           {/* Filter Bar */}
           <div className="flex flex-wrap items-center justify-between gap-4 bg-gray-900 p-4 rounded-2xl border border-gray-800">
-            <div className="flex items-center gap-2 text-xs">
-              <span className="text-gray-400 font-semibold">Filter Status:</span>
+            <div className="flex items-center gap-2 text-xs flex-wrap">
+              <span className="text-gray-400 font-semibold mr-1">Status:</span>
               {['All', 'Active', 'Expired'].map((st) => (
                 <button
                   key={st}
                   onClick={() => setStatusFilter(st)}
-                  className={`px-3 py-1.5 rounded-lg font-medium transition-all ${
-                    statusFilter === st ? 'bg-green-500 text-gray-950 font-bold' : 'text-gray-400 hover:text-white'
+                  className={`px-3 py-1.5 rounded-lg font-medium transition-all cursor-pointer ${
+                    statusFilter === st ? 'bg-green-500 text-gray-950 font-bold shadow' : 'bg-gray-950 text-gray-400 hover:text-white border border-gray-800'
                   }`}
                 >
                   {st}
+                </button>
+              ))}
+
+              <span className="text-gray-600 mx-1">|</span>
+
+              <span className="text-gray-400 font-semibold mr-1">Govt ID / KYC:</span>
+              {[
+                { id: 'All', label: 'All KYC' },
+                { id: 'Pending', label: '⏳ Pending' },
+                { id: 'Verified', label: '✓ Verified' },
+                { id: 'Rejected', label: '✕ Rejected' },
+              ].map((k) => (
+                <button
+                  key={k.id}
+                  onClick={() => setKycFilter(k.id)}
+                  className={`px-3 py-1.5 rounded-lg font-medium transition-all cursor-pointer ${
+                    kycFilter === k.id
+                      ? 'bg-emerald-500 text-gray-950 font-bold shadow'
+                      : 'bg-gray-950 text-gray-400 hover:text-white border border-gray-800'
+                  }`}
+                >
+                  {k.label}
                 </button>
               ))}
             </div>
@@ -173,9 +240,10 @@ function Members({ searchTerm, showAddModal, onCloseAddModal }) {
                   <tr>
                     <th className="py-3.5 px-4 font-semibold">Subscriber</th>
                     <th className="py-3.5 px-4 font-semibold">Phone / WhatsApp</th>
+                    <th className="py-3.5 px-4 font-semibold">Govt ID & KYC</th>
                     <th className="py-3.5 px-4 font-semibold">Telegram / Location</th>
                     <th className="py-3.5 px-4 font-semibold">Plan & Focus</th>
-                    <th className="py-3.5 px-4 font-semibold">Status</th>
+                    <th className="py-3.5 px-4 font-semibold">Account</th>
                     <th className="py-3.5 px-4 font-semibold text-right">Actions</th>
                   </tr>
                 </thead>
@@ -202,6 +270,31 @@ function Members({ searchTerm, showAddModal, onCloseAddModal }) {
                           <span className="text-gray-600">Not provided</span>
                         )}
                       </td>
+                      <td className="py-4 px-4 text-xs font-mono">
+                        <div className="flex items-center gap-1.5 mb-1 flex-wrap">
+                          <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold border ${
+                            m.kycStatus === 'Verified'
+                              ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30'
+                              : m.kycStatus === 'Rejected'
+                              ? 'bg-rose-500/10 text-rose-400 border-rose-500/30'
+                              : 'bg-amber-500/10 text-amber-400 border-amber-500/30 animate-pulse'
+                          }`}>
+                            {m.kycStatus === 'Verified' ? '✓ Verified' : m.kycStatus === 'Rejected' ? '✕ Rejected' : '⏳ Pending'}
+                          </span>
+                          <span className="text-[10px] text-gray-400 font-semibold bg-gray-950 px-1.5 py-0.5 rounded border border-gray-800">
+                            {m.idType || 'PAN Card'}
+                          </span>
+                        </div>
+                        <div className="text-[11px] text-gray-300 font-bold mb-1.5">
+                          {m.idNumber ? `${m.idNumber.substring(0, 4)}••••${m.idNumber.slice(-2)}` : 'ID Number Pending'}
+                        </div>
+                        <button
+                          onClick={() => setSelectedKycMember(m)}
+                          className="bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 px-2.5 py-1 rounded-lg text-[10px] font-bold inline-flex items-center gap-1 cursor-pointer transition-all hover:scale-105"
+                        >
+                          <span>📄</span> View ID Proof & Audit
+                        </button>
+                      </td>
                       <td className="py-4 px-4 text-xs">
                         {m.telegramUsername ? (
                           <div className="text-blue-400 font-mono font-medium">{m.telegramUsername}</div>
@@ -227,12 +320,21 @@ function Members({ searchTerm, showAddModal, onCloseAddModal }) {
                         </span>
                       </td>
                       <td className="py-4 px-4 text-right">
-                        <button
-                          onClick={() => handleToggleStatus(m.id || m._id)}
-                          className="text-xs text-gray-400 hover:text-white transition-colors cursor-pointer"
-                        >
-                          Toggle Status
-                        </button>
+                        <div className="flex items-center justify-end gap-2">
+                          <button
+                            onClick={() => setSelectedKycMember(m)}
+                            className="text-xs text-emerald-400 hover:text-emerald-300 font-semibold cursor-pointer"
+                          >
+                            Review KYC
+                          </button>
+                          <span className="text-gray-600">·</span>
+                          <button
+                            onClick={() => handleToggleStatus(m.id || m._id)}
+                            className="text-xs text-gray-400 hover:text-white transition-colors cursor-pointer"
+                          >
+                            Toggle Status
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   ))}
@@ -336,6 +438,33 @@ function Members({ searchTerm, showAddModal, onCloseAddModal }) {
                 </select>
               </div>
 
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-semibold text-gray-400 mb-1">Govt ID Type</label>
+                  <select
+                    value={newIdType}
+                    onChange={(e) => setNewIdType(e.target.value)}
+                    className="w-full bg-gray-950 border border-gray-800 text-white rounded-xl px-3 py-2 text-sm focus:outline-none"
+                  >
+                    <option value="PAN Card">PAN Card</option>
+                    <option value="Aadhaar Card">Aadhaar Card</option>
+                    <option value="Passport">Passport</option>
+                    <option value="Driving License">Driving License</option>
+                    <option value="Voter ID">Voter ID</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-gray-400 mb-1">Govt ID Number</label>
+                  <input
+                    type="text"
+                    placeholder="e.g. ABCDE1234F"
+                    value={newIdNumber}
+                    onChange={(e) => setNewIdNumber(e.target.value)}
+                    className="w-full bg-gray-950 border border-gray-800 text-white rounded-xl px-3 py-2 text-sm focus:outline-none uppercase"
+                  />
+                </div>
+              </div>
+
               <div className="pt-2 flex justify-end gap-3">
                 <button
                   type="button"
@@ -352,6 +481,201 @@ function Members({ searchTerm, showAddModal, onCloseAddModal }) {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* KYC Review & Document Audit Modal */}
+      {selectedKycMember && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md overflow-y-auto">
+          <div className="bg-gray-900 border border-gray-800 rounded-3xl max-w-2xl w-full p-6 shadow-2xl relative my-8 max-h-[90vh] overflow-y-auto">
+            {/* Modal Header */}
+            <div className="flex items-center justify-between border-b border-gray-800 pb-4 mb-5">
+              <div>
+                <div className="flex items-center gap-2">
+                  <span className="text-xl">🛡️</span>
+                  <h3 className="text-xl font-bold text-white">Government ID & KYC Audit</h3>
+                </div>
+                <p className="text-xs text-gray-400 mt-0.5">FIU-IND & AML Identity Verification Portal</p>
+              </div>
+              <button
+                onClick={() => { setSelectedKycMember(null); setRejectionInput(''); }}
+                className="text-gray-400 hover:text-white p-2 rounded-xl hover:bg-gray-800 text-lg transition-colors cursor-pointer"
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Member Summary Header */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 p-4 bg-gray-950/80 rounded-2xl border border-gray-800/80 mb-5">
+              <div>
+                <div className="text-[11px] text-gray-400 uppercase tracking-wider font-semibold">Applicant Name</div>
+                <div className="text-base font-bold text-white mt-0.5">{selectedKycMember.name}</div>
+                <div className="text-xs text-gray-400 font-mono mt-0.5">{selectedKycMember.email}</div>
+              </div>
+              <div>
+                <div className="text-[11px] text-gray-400 uppercase tracking-wider font-semibold">Verification Status</div>
+                <div className="flex items-center gap-2 mt-1">
+                  <span className={`px-2.5 py-1 rounded-full text-xs font-bold border ${
+                    selectedKycMember.kycStatus === 'Verified'
+                      ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30'
+                      : selectedKycMember.kycStatus === 'Rejected'
+                      ? 'bg-rose-500/10 text-rose-400 border-rose-500/30'
+                      : 'bg-amber-500/10 text-amber-400 border-amber-500/30'
+                  }`}>
+                    {selectedKycMember.kycStatus === 'Verified' ? '✓ Verified' : selectedKycMember.kycStatus === 'Rejected' ? '✕ Rejected' : '⏳ Pending Audit'}
+                  </span>
+                  {selectedKycMember.phone && (
+                    <a
+                      href={`https://wa.me/${selectedKycMember.phone.replace(/[^0-9]/g, '')}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-xs text-emerald-400 hover:underline inline-flex items-center gap-1 font-semibold"
+                    >
+                      <span>💬</span> WhatsApp
+                    </a>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Document Details */}
+            <div className="mb-5 space-y-4">
+              <div className="bg-gray-950 p-4 rounded-2xl border border-gray-800/60">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-xs text-gray-400 font-semibold uppercase tracking-wider">Document Type:</span>
+                  <span className="text-xs font-bold text-emerald-400 bg-emerald-500/10 px-2.5 py-0.5 rounded-full border border-emerald-500/20">
+                    {selectedKycMember.idType || 'PAN Card'}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-xs text-gray-400 font-semibold uppercase tracking-wider">Official Document ID:</span>
+                  <span className="text-sm font-mono font-bold text-white tracking-widest bg-gray-900 px-3 py-1 rounded-lg border border-gray-700">
+                    {selectedKycMember.idNumber || 'No ID Number Submitted'}
+                  </span>
+                </div>
+                {selectedKycMember.kycRejectionReason && (
+                  <div className="mt-3 p-2.5 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-300 text-xs">
+                    <span className="font-bold">Prior Rejection Reason:</span> {selectedKycMember.kycRejectionReason}
+                  </div>
+                )}
+              </div>
+
+              {/* Scanned ID Proof Documents */}
+              <div>
+                <div className="text-xs font-semibold text-gray-300 uppercase tracking-wider mb-2 flex items-center justify-between">
+                  <span>Uploaded Proof Documents</span>
+                  <span className="text-[11px] text-gray-500 lowercase">Click photo to open full resolution</span>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {/* Front Side */}
+                  <div className="p-3 bg-gray-950 rounded-2xl border border-gray-800">
+                    <div className="text-xs font-bold text-gray-300 mb-2 flex items-center justify-between">
+                      <span>Front Side Photo</span>
+                      {selectedKycMember.idDocumentUrl && (
+                        <a
+                          href={selectedKycMember.idDocumentUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-[11px] text-emerald-400 hover:underline font-semibold"
+                        >
+                          Open ↗
+                        </a>
+                      )}
+                    </div>
+                    {selectedKycMember.idDocumentUrl ? (
+                      <a href={selectedKycMember.idDocumentUrl} target="_blank" rel="noopener noreferrer">
+                        <img
+                          src={selectedKycMember.idDocumentUrl}
+                          alt="ID Front Document"
+                          className="w-full h-44 object-contain rounded-xl bg-black border border-gray-800 hover:opacity-90 transition cursor-zoom-in"
+                        />
+                      </a>
+                    ) : (
+                      <div className="h-44 rounded-xl border border-dashed border-gray-800 flex flex-col items-center justify-center text-gray-600 text-xs text-center p-4">
+                        <span className="text-2xl mb-1">📭</span>
+                        No front photo uploaded
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Back Side */}
+                  <div className="p-3 bg-gray-950 rounded-2xl border border-gray-800">
+                    <div className="text-xs font-bold text-gray-300 mb-2 flex items-center justify-between">
+                      <span>Back Side (Aadhaar / DL)</span>
+                      {selectedKycMember.idDocumentBackUrl && (
+                        <a
+                          href={selectedKycMember.idDocumentBackUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-[11px] text-emerald-400 hover:underline font-semibold"
+                        >
+                          Open ↗
+                        </a>
+                      )}
+                    </div>
+                    {selectedKycMember.idDocumentBackUrl ? (
+                      <a href={selectedKycMember.idDocumentBackUrl} target="_blank" rel="noopener noreferrer">
+                        <img
+                          src={selectedKycMember.idDocumentBackUrl}
+                          alt="ID Back Document"
+                          className="w-full h-44 object-contain rounded-xl bg-black border border-gray-800 hover:opacity-90 transition cursor-zoom-in"
+                        />
+                      </a>
+                    ) : (
+                      <div className="h-44 rounded-xl border border-dashed border-gray-800 flex flex-col items-center justify-center text-gray-600 text-xs text-center p-4">
+                        <span className="text-2xl mb-1">📄</span>
+                        {selectedKycMember.idType === 'Aadhaar Card' || selectedKycMember.idType === 'Driving License'
+                          ? 'Back side not uploaded'
+                          : 'Not required for PAN / Passport'}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Admin Audit Actions */}
+            <div className="pt-4 border-t border-gray-800">
+              <div className="mb-3">
+                <label className="block text-xs font-semibold text-gray-400 mb-1">
+                  Rejection Reason (only needed if declining):
+                </label>
+                <input
+                  type="text"
+                  placeholder="e.g. Document photo is blurry, expired ID, or name does not match profile"
+                  value={rejectionInput}
+                  onChange={(e) => setRejectionInput(e.target.value)}
+                  className="w-full bg-gray-950 border border-gray-800 rounded-xl px-3 py-2 text-xs text-white placeholder-gray-600 focus:outline-none focus:border-rose-500"
+                />
+              </div>
+
+              <div className="flex flex-col sm:flex-row items-center justify-end gap-2.5">
+                <button
+                  type="button"
+                  onClick={() => { setSelectedKycMember(null); setRejectionInput(''); }}
+                  className="w-full sm:w-auto px-4 py-2 text-xs text-gray-400 hover:text-white rounded-xl hover:bg-gray-800 transition cursor-pointer"
+                >
+                  Close
+                </button>
+                <button
+                  type="button"
+                  disabled={processingKyc}
+                  onClick={() => handleKycAction(selectedKycMember.id || selectedKycMember._id, 'Rejected', rejectionInput || 'Document verification failed')}
+                  className="w-full sm:w-auto px-4 py-2 text-xs font-bold rounded-xl bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/30 transition disabled:opacity-50 cursor-pointer"
+                >
+                  ✕ Reject KYC
+                </button>
+                <button
+                  type="button"
+                  disabled={processingKyc}
+                  onClick={() => handleKycAction(selectedKycMember.id || selectedKycMember._id, 'Verified')}
+                  className="w-full sm:w-auto px-5 py-2 text-xs font-bold rounded-xl bg-gradient-to-r from-emerald-500 to-green-600 hover:from-emerald-400 hover:to-green-500 text-gray-950 shadow-lg shadow-emerald-500/20 transition disabled:opacity-50 cursor-pointer"
+                >
+                  {processingKyc ? 'Updating...' : '✓ Approve & Verify KYC'}
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       )}

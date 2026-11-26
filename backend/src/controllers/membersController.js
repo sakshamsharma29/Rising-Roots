@@ -5,7 +5,7 @@ import { sendBroadcastSignal } from '../services/telegramBot.js';
 
 export const getMembers = async (req, res) => {
   try {
-    const { search, status, sort = 'desc' } = req.query;
+    const { search, status, kycStatus, sort = 'desc' } = req.query;
 
     // Auto-sync any registered users with role 'user' who are missing from Member collection
     try {
@@ -17,10 +17,27 @@ export const getMembers = async (req, res) => {
           await Member.create({
             name: u.name,
             email: cleanEmail,
+            phone: u.phone || '',
+            telegramUsername: u.telegramUsername || '',
+            city: u.city || '',
+            state: u.state || '',
+            preferredMarket: u.preferredMarket || 'All Markets',
+            idType: u.idType || 'PAN Card',
+            idNumber: u.idNumber || '',
+            idDocumentUrl: u.idDocumentUrl || '',
+            idDocumentBackUrl: u.idDocumentBackUrl || '',
+            kycStatus: u.kycStatus || 'Pending',
             plan: 'Pro Trader',
             status: 'Active',
             joinedDate: new Date(),
           });
+        } else if (u.idNumber && (!exists.idNumber || !exists.idDocumentUrl)) {
+          exists.idType = u.idType || exists.idType;
+          exists.idNumber = u.idNumber || exists.idNumber;
+          exists.idDocumentUrl = u.idDocumentUrl || exists.idDocumentUrl;
+          exists.idDocumentBackUrl = u.idDocumentBackUrl || exists.idDocumentBackUrl;
+          exists.kycStatus = u.kycStatus || exists.kycStatus;
+          await exists.save();
         }
       }
     } catch (syncErr) {
@@ -31,11 +48,20 @@ export const getMembers = async (req, res) => {
 
     if (search) {
       const searchRegex = new RegExp(search, 'i');
-      filter.$or = [{ name: searchRegex }, { email: searchRegex }, { plan: searchRegex }];
+      filter.$or = [
+        { name: searchRegex },
+        { email: searchRegex },
+        { plan: searchRegex },
+        { idNumber: searchRegex },
+      ];
     }
 
     if (status && status !== 'All') {
       filter.status = new RegExp(`^${status}$`, 'i');
+    }
+
+    if (kycStatus && kycStatus !== 'All') {
+      filter.kycStatus = new RegExp(`^${kycStatus}$`, 'i');
     }
 
     const sortOption = { createdAt: sort === 'asc' ? 1 : -1 };
@@ -127,6 +153,49 @@ export const toggleMemberStatus = async (req, res) => {
     await member.save();
 
     res.json({ success: true, data: member });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+export const updateMemberKycStatus = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { kycStatus, rejectionReason } = req.body;
+
+    if (!['Verified', 'Rejected', 'Pending'].includes(kycStatus)) {
+      return res.status(400).json({ success: false, message: 'Invalid KYC status.' });
+    }
+
+    const member = await Member.findById(id);
+    if (!member) {
+      return res.status(404).json({ success: false, message: 'Member not found.' });
+    }
+
+    member.kycStatus = kycStatus;
+    if (kycStatus === 'Verified') {
+      member.kycVerifiedAt = new Date();
+      member.kycRejectionReason = '';
+    } else if (kycStatus === 'Rejected') {
+      member.kycRejectionReason = rejectionReason || 'Document unreadable or invalid format';
+    }
+    await member.save();
+
+    // Also sync status to User collection
+    await User.findOneAndUpdate(
+      { email: member.email.toLowerCase().trim() },
+      {
+        kycStatus: member.kycStatus,
+        kycVerifiedAt: member.kycVerifiedAt,
+        kycRejectionReason: member.kycRejectionReason,
+      }
+    );
+
+    res.json({
+      success: true,
+      message: `Member KYC ${kycStatus.toLowerCase()} successfully.`,
+      data: member,
+    });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }
