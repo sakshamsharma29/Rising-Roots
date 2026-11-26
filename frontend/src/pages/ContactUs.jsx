@@ -296,6 +296,20 @@ export default function ContactUs() {
           </div>
         </div>
       </div>
+
+      {/* Footer */}
+      <footer className="border-t border-gray-900 py-8 px-6 lg:px-16 text-center text-xs text-gray-500 mt-12">
+        <div className="max-w-6xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
+          <p>© 2026 Rising Roots Intelligence. All rights reserved.</p>
+          <div className="flex items-center gap-6">
+            <Link to="/" className="hover:text-white transition-colors">Home</Link>
+            <Link to="/about" className="hover:text-white transition-colors">About Us</Link>
+            <Link to="/privacy" className="hover:text-emerald-400 font-semibold transition-colors">Privacy Policy</Link>
+            <Link to="/history" className="hover:text-white transition-colors">Track Record</Link>
+            <Link to="/login" className="hover:text-white transition-colors">Login</Link>
+          </div>
+        </div>
+      </footer>
     </div>
   );
 }

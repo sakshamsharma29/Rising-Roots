@@ -978,13 +978,19 @@ function LandingPage() {
           <span className="text-sm font-semibold text-gray-400">Rising Roots — Crypto & Forex Trading Intelligence</span>
         </div>
         <p className="text-xs text-gray-600">© 2026 Rising Roots. All rights reserved.</p>
-        <div className="flex gap-6 text-xs text-gray-500">
+        <div className="flex flex-wrap gap-4 sm:gap-6 text-xs text-gray-500 justify-center">
+          <Link to="/about" className="hover:text-emerald-400 transition-colors font-semibold text-gray-400">
+            About Us
+          </Link>
+          <Link to="/privacy" className="hover:text-emerald-400 transition-colors font-semibold text-gray-400">
+            🛡️ Privacy Policy
+          </Link>
           <Link to="/history" className="hover:text-emerald-400 font-bold text-gray-400 transition-colors">
             🏆 Track Record & History
           </Link>
-          <button onClick={() => setLegalModal('privacy')} className="hover:text-white transition-colors cursor-pointer">
-            Privacy Policy
-          </button>
+          <Link to="/contact" className="hover:text-amber-400 font-semibold text-gray-400 transition-colors">
+            Query Desk
+          </Link>
           <button onClick={() => setLegalModal('terms')} className="hover:text-white transition-colors cursor-pointer">
             Terms of Service
           </button>

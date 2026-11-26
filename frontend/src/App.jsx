@@ -19,6 +19,7 @@ import VipSignals from './pages/VipSignals';
 import TradeHistory from './pages/TradeHistory';
 import AboutUs from './pages/AboutUs';
 import ContactUs from './pages/ContactUs';
+import PrivacyPolicy from './pages/PrivacyPolicy';
 import Sidebar from './components/Sidebar';
 import Header from './components/Header';
 
@@ -71,6 +72,9 @@ function ProtectedLayout() {
               <Route path="/plans" element={<Plans />} />
               <Route path="/analytics" element={<Analytics />} />
               <Route path="/profile" element={<Profile />} />
+              <Route path="/about" element={<AboutUs />} />
+              <Route path="/privacy" element={<PrivacyPolicy />} />
+              <Route path="/contact" element={<ContactUs />} />
               <Route path="/settings" element={<Settings />} />
               <Route path="*" element={<Navigate to="/dashboard" replace />} />
             </Routes>
@@ -86,6 +90,9 @@ function ProtectedLayout() {
               <Route path="/ai" element={<AiAssistant />} />
               <Route path="/plans" element={<Plans />} />
               <Route path="/profile" element={<Profile />} />
+              <Route path="/about" element={<AboutUs />} />
+              <Route path="/privacy" element={<PrivacyPolicy />} />
+              <Route path="/contact" element={<ContactUs />} />
               <Route path="*" element={<Navigate to="/dashboard" replace />} />
             </Routes>
           )}
@@ -102,6 +109,7 @@ function App() {
         {/* Public routes */}
         <Route path="/" element={<LandingPage />} />
         <Route path="/about" element={<AboutUs />} />
+        <Route path="/privacy" element={<PrivacyPolicy />} />
         <Route path="/contact" element={<ContactUs />} />
         <Route path="/login" element={<AuthPage />} />
         <Route

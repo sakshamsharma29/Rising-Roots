@@ -422,6 +422,7 @@ export default function AboutUs() {
           <p>© 2026 Rising Roots Intelligence. All rights reserved.</p>
           <div className="flex items-center gap-6">
             <Link to="/about" className="hover:text-white transition-colors">About Us</Link>
+            <Link to="/privacy" className="hover:text-emerald-400 font-semibold transition-colors">Privacy Policy</Link>
             <Link to="/history" className="hover:text-white transition-colors">Track Record</Link>
             <Link to="/dashboard/terminal" className="hover:text-white transition-colors">Terminal</Link>
             <Link to="/contact" className="hover:text-white transition-colors">Contact</Link>
