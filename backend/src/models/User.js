@@ -7,11 +7,9 @@ const userSchema = new mongoose.Schema(
     passwordHash: { type: String, required: true },
     role: { type: String, enum: ['admin', 'user'], default: 'user' },
     phone: { type: String, trim: true, default: '' },
-    telegramUsername: { type: String, trim: true, default: '' },
     city: { type: String, trim: true, default: '' },
     state: { type: String, trim: true, default: '' },
     tradingExperience: { type: String, default: 'Intermediate' },
-    preferredMarket: { type: String, default: 'All Markets' },
     // Government ID & KYC Verification Fields
     idType: {
       type: String,

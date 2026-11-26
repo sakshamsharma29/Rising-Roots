@@ -9,9 +9,7 @@ function AuthPage() {
   const [password, setPassword] = useState('');
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
-  const [telegramUsername, setTelegramUsername] = useState('');
   const [city, setCity] = useState('');
-  const [preferredMarket, setPreferredMarket] = useState('Crypto & Forex');
 
   // Government ID Proof & KYC States
   const [idType, setIdType] = useState('PAN Card');
@@ -84,9 +82,7 @@ function AuthPage() {
           email,
           password,
           phone,
-          telegramUsername,
           city,
-          preferredMarket,
           idType,
           idNumber: idNumber.toUpperCase().trim(),
           idDocumentUrl,
@@ -115,7 +111,7 @@ function AuthPage() {
         localStorage.setItem('rr_auth', JSON.stringify({ email, name: email.split('@')[0], role: userRole }));
         navigate('/dashboard');
       } else if (mode === 'signup' && name && email && password.length >= 6) {
-        localStorage.setItem('rr_auth', JSON.stringify({ email, name, role: userRole, phone, telegramUsername, city }));
+        localStorage.setItem('rr_auth', JSON.stringify({ email, name, role: userRole, phone, city }));
         navigate('/dashboard');
       } else {
         setError('Server unreachable. Please check backend API.');
@@ -222,21 +218,6 @@ function AuthPage() {
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-300 mb-1.5">
-                      Telegram Username
-                    </label>
-                    <input
-                      type="text"
-                      placeholder="@rahul_trader"
-                      value={telegramUsername}
-                      onChange={(e) => setTelegramUsername(e.target.value)}
-                      className="w-full bg-gray-900 border border-gray-800 rounded-xl px-4 py-3 text-sm text-white focus:border-green-500 focus:outline-none focus:ring-1 focus:ring-green-500/30 transition-all placeholder-gray-600"
-                    />
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <div>
                     <label className="block text-sm font-medium text-gray-300 mb-1.5">City / State</label>
                     <input
                       type="text"
@@ -245,20 +226,6 @@ function AuthPage() {
                       onChange={(e) => setCity(e.target.value)}
                       className="w-full bg-gray-900 border border-gray-800 rounded-xl px-4 py-3 text-sm text-white focus:border-green-500 focus:outline-none focus:ring-1 focus:ring-green-500/30 transition-all placeholder-gray-600"
                     />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-300 mb-1.5">Trading Focus</label>
-                    <select
-                      value={preferredMarket}
-                      onChange={(e) => setPreferredMarket(e.target.value)}
-                      className="w-full bg-gray-900 border border-gray-800 rounded-xl px-4 py-3 text-sm text-white focus:border-green-500 focus:outline-none focus:ring-1 focus:ring-green-500/30 transition-all"
-                    >
-                      <option value="Crypto & Forex">Crypto & Forex</option>
-                      <option value="Indian Indices & Options">Indian Indices (Nifty/Sensex)</option>
-                      <option value="Commodities (Gold/Silver)">Commodities (Gold/Silver)</option>
-                      <option value="All Markets">All Markets</option>
-                    </select>
                   </div>
                 </div>
 

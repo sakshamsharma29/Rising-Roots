@@ -6,11 +6,9 @@ const memberSchema = new mongoose.Schema(
     name: { type: String, required: true, trim: true },
     email: { type: String, required: true, lowercase: true, trim: true },
     phone: { type: String, trim: true, default: '' },
-    telegramUsername: { type: String, trim: true, default: '' },
     city: { type: String, trim: true, default: '' },
     state: { type: String, trim: true, default: '' },
     tradingExperience: { type: String, default: 'Intermediate' },
-    preferredMarket: { type: String, default: 'All Markets' },
     // Government ID & KYC Verification Fields
     idType: {
       type: String,

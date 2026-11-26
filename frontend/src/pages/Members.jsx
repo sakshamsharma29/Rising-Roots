@@ -241,8 +241,8 @@ function Members({ searchTerm, showAddModal, onCloseAddModal }) {
                     <th className="py-3.5 px-4 font-semibold">Subscriber</th>
                     <th className="py-3.5 px-4 font-semibold">Phone / WhatsApp</th>
                     <th className="py-3.5 px-4 font-semibold">Govt ID & KYC</th>
-                    <th className="py-3.5 px-4 font-semibold">Telegram / Location</th>
-                    <th className="py-3.5 px-4 font-semibold">Plan & Focus</th>
+                    <th className="py-3.5 px-4 font-semibold">Location</th>
+                    <th className="py-3.5 px-4 font-semibold">Plan</th>
                     <th className="py-3.5 px-4 font-semibold">Account</th>
                     <th className="py-3.5 px-4 font-semibold text-right">Actions</th>
                   </tr>
@@ -296,16 +296,10 @@ function Members({ searchTerm, showAddModal, onCloseAddModal }) {
                         </button>
                       </td>
                       <td className="py-4 px-4 text-xs">
-                        {m.telegramUsername ? (
-                          <div className="text-blue-400 font-mono font-medium">{m.telegramUsername}</div>
-                        ) : (
-                          <div className="text-gray-600">No Telegram</div>
-                        )}
-                        <div className="text-gray-400 text-[11px] mt-0.5">{m.city || 'Location N/A'}</div>
+                        <div className="text-gray-300 font-medium">{m.city || 'India'}</div>
                       </td>
                       <td className="py-4 px-4 text-xs">
-                        <div className="text-gray-200 font-semibold">{m.plan}</div>
-                        <div className="text-emerald-400 text-[11px]">{m.preferredMarket || 'All Markets'}</div>
+                        <div className="text-emerald-400 font-semibold">{m.plan}</div>
                       </td>
                       <td className="py-4 px-4">
                         <span
