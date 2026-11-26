@@ -90,6 +90,14 @@ export default function AboutUs() {
       gradient: 'from-amber-500 to-orange-500',
     },
     {
+      name: 'Anil Daksh',
+      role: 'Senior Market Strategist & Co-Founder',
+      desc: 'Expert in institutional price action, multi-asset risk management, and macro trend execution across Forex, Gold, and Indian Indices.',
+      badge: 'Co-Founder',
+      avatar: 'AD',
+      gradient: 'from-blue-500 to-indigo-600',
+    },
+    {
       name: 'Saksham Sharma',
       role: 'Quantitative Systems Architect & Developer',
       desc: 'Architect behind real-time Delta Exchange API feeds, automated signal webhooks, and low-latency trading infrastructure.',
@@ -236,7 +244,7 @@ export default function AboutUs() {
           </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-4xl mx-auto">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-6xl mx-auto">
           {team.map((m, i) => (
             <div key={i} className="bg-gray-900 border border-gray-800 p-6 rounded-2xl flex items-start gap-4">
               <div className={`w-14 h-14 rounded-2xl bg-gradient-to-tr ${m.gradient} flex items-center justify-center text-gray-950 font-black text-lg shrink-0 shadow-lg`}>
