@@ -47,10 +47,44 @@ export default function TradeHistory() {
   const [formHoldingPeriod, setFormHoldingPeriod] = useState('1d 6h');
   const [formRationale, setFormRationale] = useState('');
   const [formScreenshotUrl, setFormScreenshotUrl] = useState('');
+  const [screenshotFileName, setScreenshotFileName] = useState('');
   const [formBrokerName, setFormBrokerName] = useState('Delta Exchange');
   const [formVerifiedProfit, setFormVerifiedProfit] = useState('');
   const [selectedProof, setSelectedProof] = useState(null);
   const [toast, setToast] = useState(null);
+
+  const handleScreenshotUpload = (e) => {
+    const file = e.target.files && e.target.files[0];
+    if (!file) return;
+    if (file.size > 10 * 1024 * 1024) {
+      setToast({ type: 'error', message: 'Screenshot file size must be under 10MB.' });
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = () => {
+      setFormScreenshotUrl(reader.result);
+      setScreenshotFileName(file.name);
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handlePriceChange = (field, val) => {
+    if (field === 'entry') setFormEntryPrice(val);
+    if (field === 'exit') setFormExitPrice(val);
+
+    const entry = parseFloat(field === 'entry' ? val : formEntryPrice);
+    const exit = parseFloat(field === 'exit' ? val : formExitPrice);
+
+    if (entry > 0 && exit > 0) {
+      const isLong = formDirection.includes('BUY') || formDirection.includes('CALL');
+      const diff = isLong ? exit - entry : entry - exit;
+      const pct = ((diff / entry) * 100).toFixed(1);
+      setFormReturnPct(pct);
+      const estPnl = Math.round(diff * (entry > 1000 ? 1 : 100));
+      setFormPnlUsd(estPnl.toString());
+      setFormOutcome(diff >= 0 ? 'win' : 'loss');
+    }
+  };
 
   // Fetch verified trades from backend
   const fetchTrades = async () => {
@@ -200,18 +234,17 @@ export default function TradeHistory() {
           </div>
 
           <div className="flex flex-col sm:flex-row lg:flex-col gap-3 shrink-0">
-            {isAdmin && (
-              <button
-                onClick={() => setShowAddModal(true)}
-                className="bg-emerald-500 hover:bg-emerald-400 text-gray-950 font-black px-5 py-3 rounded-2xl text-xs sm:text-sm transition-all shadow-lg shadow-emerald-500/20 flex items-center justify-center gap-2 cursor-pointer"
-              >
-                <span>➕</span> Log New Closed Trade
-              </button>
-            )}
+            <button
+              onClick={() => setShowAddModal(true)}
+              className="bg-gradient-to-r from-emerald-500 to-green-400 hover:from-emerald-400 hover:to-green-300 text-gray-950 font-black px-5 py-3 rounded-2xl text-xs sm:text-sm transition-all shadow-lg shadow-emerald-500/20 flex items-center justify-center gap-2 cursor-pointer hover:scale-[1.02]"
+              title="Add past trade record and upload broker profit screenshot"
+            >
+              <span>📸</span> Log Trade & Screenshot Proof
+            </button>
 
             <Link
               to="/dashboard/signals"
-              className="bg-gradient-to-r from-emerald-500 to-green-400 hover:from-emerald-400 hover:to-green-300 text-gray-950 font-black px-5 py-3 rounded-2xl text-xs sm:text-sm transition-all shadow-lg shadow-emerald-500/20 flex items-center justify-center gap-2 text-center"
+              className="bg-gray-800 hover:bg-gray-700 text-white font-bold px-5 py-3 rounded-2xl text-xs sm:text-sm transition-all border border-gray-700 flex items-center justify-center gap-2 text-center"
             >
               <span>🔥</span> Live Signals Room →
             </Link>
@@ -890,7 +923,7 @@ export default function TradeHistory() {
                     required
                     placeholder="e.g. 64200"
                     value={formEntryPrice}
-                    onChange={(e) => setFormEntryPrice(e.target.value)}
+                    onChange={(e) => handlePriceChange('entry', e.target.value)}
                     className="w-full bg-gray-950 border border-gray-800 rounded-xl px-3 py-2 text-xs font-mono text-white focus:outline-none focus:border-emerald-500"
                   />
                 </div>
@@ -903,7 +936,7 @@ export default function TradeHistory() {
                     required
                     placeholder="e.g. 67500"
                     value={formExitPrice}
-                    onChange={(e) => setFormExitPrice(e.target.value)}
+                    onChange={(e) => handlePriceChange('exit', e.target.value)}
                     className="w-full bg-gray-950 border border-gray-800 rounded-xl px-3 py-2 text-xs font-mono text-white focus:outline-none focus:border-emerald-500"
                   />
                 </div>
@@ -988,16 +1021,58 @@ export default function TradeHistory() {
               {/* Profit Proof Screenshot & Broker Name */}
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 <div className="sm:col-span-2">
-                  <label className="block text-xs font-semibold text-gray-400 mb-1">
-                    Profit Proof Screenshot URL (Optional)
+                  <label className="block text-xs font-semibold text-gray-300 mb-1 flex items-center justify-between">
+                    <span>Trade Profit Screenshot / Broker Execution Slip</span>
+                    <span className="text-[10px] text-emerald-400 font-normal">PNG, JPG, WEBP (Max 10MB)</span>
                   </label>
-                  <input
-                    type="url"
-                    placeholder="https://... exchange order fill slip image URL"
-                    value={formScreenshotUrl}
-                    onChange={(e) => setFormScreenshotUrl(e.target.value)}
-                    className="w-full bg-gray-950 border border-gray-800 rounded-xl px-3 py-2 text-xs font-mono text-white focus:outline-none focus:border-emerald-500"
-                  />
+
+                  {!formScreenshotUrl ? (
+                    <label className="border-2 border-dashed border-gray-800 hover:border-emerald-500/50 bg-gray-950 rounded-xl p-3 flex flex-col items-center justify-center cursor-pointer transition-all group">
+                      <span className="text-xl mb-1 group-hover:scale-110 transition-transform">📸</span>
+                      <span className="text-xs text-gray-300 font-bold">Click to select screenshot image</span>
+                      <span className="text-[10px] text-gray-500 mt-0.5">Attach exchange fill slip or PnL card</span>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={handleScreenshotUpload}
+                        className="hidden"
+                      />
+                    </label>
+                  ) : (
+                    <div className="flex items-center justify-between bg-gray-950 border border-emerald-500/40 rounded-xl p-2.5">
+                      <div className="flex items-center gap-3 overflow-hidden">
+                        <img
+                          src={formScreenshotUrl}
+                          alt="Screenshot Preview"
+                          className="w-12 h-12 object-cover rounded-lg border border-gray-800 shrink-0 bg-black"
+                        />
+                        <div className="truncate">
+                          <span className="text-xs font-bold text-emerald-400 block truncate">
+                            {screenshotFileName || 'Trade Screenshot Attached'}
+                          </span>
+                          <span className="text-[10px] text-gray-400">✓ Ready to display on public ledger</span>
+                        </div>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => { setFormScreenshotUrl(''); setScreenshotFileName(''); }}
+                        className="text-gray-400 hover:text-rose-400 text-xs px-2 py-1 cursor-pointer font-bold"
+                      >
+                        ✕ Remove
+                      </button>
+                    </div>
+                  )}
+
+                  <div className="mt-1.5 flex items-center gap-2">
+                    <span className="text-[10px] text-gray-500 shrink-0">Or paste image URL:</span>
+                    <input
+                      type="url"
+                      placeholder="https://... (optional image link)"
+                      value={formScreenshotUrl.startsWith('data:') ? '' : formScreenshotUrl}
+                      onChange={(e) => setFormScreenshotUrl(e.target.value)}
+                      className="w-full bg-gray-950 border border-gray-800 rounded-lg px-2.5 py-1 text-[11px] font-mono text-white focus:outline-none focus:border-emerald-500 placeholder-gray-600"
+                    />
+                  </div>
                 </div>
 
                 <div>
@@ -1013,6 +1088,7 @@ export default function TradeHistory() {
                     <option value="Zerodha">Zerodha</option>
                     <option value="Bybit">Bybit</option>
                     <option value="Groww">Groww</option>
+                    <option value="Angel One">Angel One</option>
                   </select>
                 </div>
               </div>

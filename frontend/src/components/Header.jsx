@@ -77,16 +77,27 @@ function Header({ searchTerm, setSearchTerm, onOpenAddMember }) {
 
         <div className="h-6 w-px bg-gray-800"></div>
 
-        {/* User Profile */}
-        <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-full bg-gradient-to-tr from-green-500 to-emerald-300 flex items-center justify-center text-gray-950 font-bold text-sm">
+        {/* User Profile - Clickable to open Profile */}
+        <button
+          onClick={() => navigate('/dashboard/profile')}
+          title="Click to view & edit your profile"
+          className="flex items-center gap-3 p-1.5 rounded-xl hover:bg-gray-800/80 transition-all cursor-pointer group text-left border border-transparent hover:border-gray-700/60"
+        >
+          <div className="w-9 h-9 rounded-full bg-gradient-to-tr from-green-500 to-emerald-300 flex items-center justify-center text-gray-950 font-bold text-sm shadow group-hover:scale-105 transition-transform">
             {getInitials()}
           </div>
           <div className="hidden sm:block text-left">
-            <p className="text-sm font-medium text-white truncate max-w-[150px]">{user.name || user.email || 'Admin Trader'}</p>
-            <p className="text-xs text-gray-400 capitalize">{user.role === 'admin' ? 'Owner / Admin' : 'Subscriber'}</p>
+            <p className="text-sm font-medium text-white truncate max-w-[150px] group-hover:text-emerald-400 transition-colors">
+              {user.name || user.email || 'Admin Trader'}
+            </p>
+            <p className="text-xs text-gray-400 capitalize">
+              {user.role === 'admin' ? 'Owner / Admin' : 'Subscriber'}
+            </p>
           </div>
-        </div>
+          <svg className="w-3.5 h-3.5 text-gray-500 group-hover:text-emerald-400 transition-colors hidden md:block" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" />
+          </svg>
+        </button>
 
         {/* Prominent Upper Right Logout */}
         <button
