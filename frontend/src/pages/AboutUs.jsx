@@ -16,6 +16,7 @@ export default function AboutUs() {
   const [message, setMessage] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [status, setStatus] = useState(null);
+  const [selectedLeader, setSelectedLeader] = useState(null);
 
   const handleSubmitQuery = async (e) => {
     e.preventDefault();
@@ -83,27 +84,42 @@ export default function AboutUs() {
   const team = [
     {
       name: 'Devendra Singh Rajput',
-      role: 'Lead Desk Trader & Founder',
-      desc: 'Specialist in European Options Greeks, volatility arbitrage, and liquidity sweep trading across Crypto and Indian equity derivatives.',
-      badge: 'Lead Trader',
+      role: 'Co-Founder & Lead Desk Trader',
+      badge: 'Co-Founder',
       avatar: 'DR',
       gradient: 'from-amber-500 to-orange-500',
+      desc: 'Specialist in European Options Greeks, volatility arbitrage, and liquidity sweep trading across Crypto and Indian equity derivatives.',
+      fullBio: 'Devendra leads proprietary order execution and quantitative derivatives trading at Rising Roots. With extensive market immersion spanning high-volatility crypto cycles and NSE equity options, Devendra designs institutional-grade trade setups anchored on strict delta-neutral hedged models and order-flow imbalance.',
+      experience: '7+ Years Trading Derivatives',
+      expertise: ['Crypto Options (BTC / ETH)', 'Implied Volatility (IV) Skew', 'NIFTY & BANKNIFTY Options', 'Order Flow & Liquidity Sweeps'],
+      philosophy: 'Preserve capital first, capture asymmetric gamma expansion second. Every position must have a mathematically pre-calculated stop loss before capital is committed.',
+      linkedin: null,
     },
     {
       name: 'Anil Daksh',
-      role: 'Senior Market Strategist & Co-Founder',
-      desc: 'Expert in institutional price action, multi-asset risk management, and macro trend execution across Forex, Gold, and Indian Indices.',
+      role: 'Co-Founder & Chief Market Strategist',
       badge: 'Co-Founder',
       avatar: 'AD',
       gradient: 'from-blue-500 to-indigo-600',
+      desc: 'Expert in institutional price action, multi-asset risk management, and macro trend execution across Forex, Gold, and Indian Indices.',
+      fullBio: 'Anil oversees macro strategy, risk management, and cross-market correlation desks. His analytical framework combines global liquidity flows, interest rate differentials, and high-timeframe market structure to isolate institutional accumulation and distribution zones.',
+      experience: '8+ Years Multi-Asset Trading',
+      expertise: ['Forex Major Pairs (EUR/USD, GBP/USD)', 'Spot Gold & Silver Commodities', 'Institutional Market Structure', 'Portfolio Risk Governance'],
+      philosophy: 'The market always leaves institutional footprints through volume anomalies. We execute alongside smart money rather than attempting to predict the unpredictable.',
+      linkedin: null,
     },
     {
       name: 'Saksham Sharma',
       role: 'Quantitative Systems Architect & Developer',
-      desc: 'Architect behind real-time Delta Exchange API feeds, automated signal webhooks, and low-latency trading infrastructure.',
       badge: 'Quant Dev',
       avatar: 'SS',
       gradient: 'from-emerald-500 to-teal-500',
+      desc: 'Architect behind real-time Delta Exchange API feeds, automated signal webhooks, and low-latency trading infrastructure.',
+      fullBio: 'Saksham engineers the high-availability backend engines, Delta Exchange API pipelines, automated risk alerts, and cryptographic data protection mechanisms underpinning the Rising Roots platform. Specializing in low-latency cloud systems and full-stack architecture.',
+      experience: 'Quant & Full-Stack Systems Engineer',
+      expertise: ['Delta Exchange & Broker Webhooks', 'Low-Latency Market Data Feeds', 'Automated Execution Engines', 'AES-256 KYC Data Security'],
+      philosophy: 'Clean code, resilient architectures, and sub-millisecond execution pipelines turn raw market numbers into actionable institutional alpha.',
+      linkedin: 'https://linkedin.com/in/saksham-sharma',
     },
   ];
 
@@ -238,32 +254,152 @@ export default function AboutUs() {
       {/* Meet the Desk Team */}
       <section className="px-6 lg:px-16 py-16 max-w-6xl mx-auto">
         <div className="text-center max-w-2xl mx-auto mb-12">
-          <h2 className="text-2xl sm:text-3xl font-black text-white">Desk Leadership</h2>
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs font-bold tracking-wide uppercase mb-3">
+            <span>🛡️</span>
+            <span>Desk Principals & Architects</span>
+          </div>
+          <h2 className="text-2xl sm:text-4xl font-black text-white">Desk Leadership</h2>
           <p className="text-sm text-gray-400 mt-2">
-            The market veterans analyzing liquidity, managing risk, and building our execution platforms.
+            The market veterans analyzing liquidity, managing risk, and engineering our execution platform. Click any profile to view full trading dossier.
           </p>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-6xl mx-auto">
           {team.map((m, i) => (
-            <div key={i} className="bg-gray-900 border border-gray-800 p-6 rounded-2xl flex items-start gap-4">
-              <div className={`w-14 h-14 rounded-2xl bg-gradient-to-tr ${m.gradient} flex items-center justify-center text-gray-950 font-black text-lg shrink-0 shadow-lg`}>
-                {m.avatar}
-              </div>
-              <div className="flex-1">
-                <div className="flex items-center justify-between">
-                  <h3 className="text-base font-bold text-white">{m.name}</h3>
-                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/30">
-                    {m.badge}
-                  </span>
+            <div
+              key={i}
+              onClick={() => setSelectedLeader(m)}
+              className="bg-gray-900 border border-gray-800 hover:border-emerald-500/40 p-6 rounded-3xl flex flex-col justify-between transition-all duration-300 hover:scale-[1.02] cursor-pointer group shadow-xl hover:shadow-emerald-500/5 relative"
+            >
+              <div>
+                <div className="flex items-start gap-4 mb-4">
+                  <div className={`w-14 h-14 rounded-2xl bg-gradient-to-tr ${m.gradient} flex items-center justify-center text-gray-950 font-black text-lg shrink-0 shadow-lg group-hover:scale-105 transition-transform`}>
+                    {m.avatar}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center justify-between gap-1.5 flex-wrap">
+                      <h3 className="text-base font-bold text-white group-hover:text-emerald-400 transition-colors truncate">
+                        {m.name}
+                      </h3>
+                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 shrink-0 uppercase tracking-wider">
+                        {m.badge}
+                      </span>
+                    </div>
+                    <p className="text-xs text-emerald-400/90 font-medium mt-0.5">{m.role}</p>
+                  </div>
                 </div>
-                <p className="text-xs text-emerald-400 font-medium mt-0.5">{m.role}</p>
-                <p className="text-xs text-gray-400 mt-2.5 leading-relaxed">{m.desc}</p>
+                <p className="text-xs text-gray-400 leading-relaxed mb-4">{m.desc}</p>
+              </div>
+
+              <div className="pt-3.5 border-t border-gray-800/80 flex items-center justify-between text-xs">
+                <span className="text-[11px] font-mono text-gray-500">{m.experience}</span>
+                <span className="text-emerald-400 font-bold flex items-center gap-1 group-hover:translate-x-1 transition-transform">
+                  View Dossier →
+                </span>
               </div>
             </div>
           ))}
         </div>
       </section>
+
+      {/* Detailed Leader Profile Modal */}
+      {selectedLeader && (
+        <div className="fixed inset-0 bg-black/85 backdrop-blur-md z-50 flex items-center justify-center p-4">
+          <div className="bg-gray-900 border border-gray-800 rounded-3xl max-w-xl w-full p-6 sm:p-8 space-y-6 max-h-[90vh] overflow-y-auto shadow-2xl relative">
+            {/* Header */}
+            <div className="flex items-start justify-between border-b border-gray-800 pb-4">
+              <div className="flex items-center gap-4">
+                <div className={`w-14 h-14 rounded-2xl bg-gradient-to-tr ${selectedLeader.gradient} flex items-center justify-center text-gray-950 font-black text-xl shadow-lg shrink-0`}>
+                  {selectedLeader.avatar}
+                </div>
+                <div>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <h3 className="text-xl font-bold text-white">{selectedLeader.name}</h3>
+                    <span className="text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 uppercase tracking-wider">
+                      {selectedLeader.badge}
+                    </span>
+                  </div>
+                  <p className="text-xs text-emerald-400 font-medium mt-0.5">{selectedLeader.role}</p>
+                  <p className="text-[11px] text-gray-400 font-mono mt-0.5">⏱️ {selectedLeader.experience}</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setSelectedLeader(null)}
+                className="text-gray-400 hover:text-white p-1 rounded-lg text-lg transition-colors cursor-pointer"
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Background & Bio */}
+            <div className="space-y-2">
+              <h4 className="text-xs font-bold uppercase tracking-wider text-gray-400">Desk Profile & Background</h4>
+              <p className="text-xs sm:text-sm text-gray-300 leading-relaxed font-sans bg-gray-950 p-4 rounded-2xl border border-gray-800/80">
+                {selectedLeader.fullBio}
+              </p>
+            </div>
+
+            {/* Core Market Expertise */}
+            <div className="space-y-2">
+              <h4 className="text-xs font-bold uppercase tracking-wider text-gray-400">Primary Domain Expertise</h4>
+              <div className="flex flex-wrap gap-2">
+                {selectedLeader.expertise.map((exp, idx) => (
+                  <span
+                    key={idx}
+                    className="text-xs font-mono bg-gray-950 border border-gray-800 px-3 py-1 rounded-xl text-gray-300 font-medium"
+                  >
+                    ⚡ {exp}
+                  </span>
+                ))}
+              </div>
+            </div>
+
+            {/* Trading / Engineering Philosophy */}
+            <div className="space-y-1.5 bg-gray-950/60 border border-emerald-500/20 p-4 rounded-2xl">
+              <div className="text-[11px] font-bold uppercase tracking-wider text-emerald-400 flex items-center gap-1.5">
+                <span>🎯</span> Execution Philosophy
+              </div>
+              <p className="text-xs text-gray-300 italic leading-relaxed">
+                "{selectedLeader.philosophy}"
+              </p>
+            </div>
+
+            {/* Footer with Social or Credentials */}
+            <div className="pt-4 border-t border-gray-800 flex flex-col sm:flex-row items-center justify-between gap-3">
+              {selectedLeader.linkedin ? (
+                <div className="flex items-center gap-2">
+                  <a
+                    href={selectedLeader.linkedin}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-blue-600/20 hover:bg-blue-600/30 text-blue-400 border border-blue-500/30 text-xs font-bold transition-all"
+                  >
+                    <svg className="w-4 h-4 fill-current" viewBox="0 0 24 24">
+                      <path d="M19 3a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h14m-.5 15.5v-5.3a3.26 3.26 0 0 0-3.26-3.26c-.85 0-1.84.52-2.28 1.3v-1.11h-2.79v8.37h2.79v-4.93c0-.77.62-1.4 1.39-1.4a1.4 1.4 0 0 1 1.4 1.4v4.93h2.75M6.46 10.9v8.37H9.2V10.9H6.46M7.83 6.45a1.6 1.6 0 0 0-1.6 1.6 1.6 1.6 0 0 0 1.6 1.6 1.6 1.6 0 0 0 1.6-1.6c0-.89-.72-1.6-1.6-1.6Z" />
+                    </svg>
+                    <span>Connect on LinkedIn ↗</span>
+                  </a>
+                  <span className="text-[11px] text-gray-500">Systems Developer Profile</span>
+                </div>
+              ) : (
+                <div className="flex items-center gap-2 text-xs text-gray-400 font-mono">
+                  <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 font-bold text-[11px]">
+                    🛡️ Verified Desk Principal
+                  </span>
+                  <span className="hidden sm:inline text-gray-600">• No Public Social Media</span>
+                </div>
+              )}
+
+              <button
+                onClick={() => setSelectedLeader(null)}
+                className="w-full sm:w-auto bg-gray-800 hover:bg-gray-700 text-white font-bold px-5 py-2 rounded-xl text-xs transition-colors cursor-pointer"
+              >
+                Close Dossier
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Interactive Query Form Section */}
       <section id="query" className="px-6 lg:px-16 py-16 bg-gradient-to-b from-gray-950 via-gray-900/60 to-gray-950 border-t border-gray-900">
